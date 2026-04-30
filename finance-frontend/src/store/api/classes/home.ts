@@ -1,0 +1,14 @@
+
+export interface summaryPayload {
+    total_spend : number 
+    tracker_type : string
+    starting_date : string
+    last_updated : string
+    classification_data : Record<string, number>
+}
+
+export interface accountSummaryResponse {
+    week: summaryPayload;
+    month: summaryPayload;
+    year: summaryPayload;
+}

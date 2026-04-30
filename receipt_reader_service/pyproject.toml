@@ -1,0 +1,14 @@
+[project]
+name = "receipt_reader_service"
+version = "0.1.0"
+description = "Microservice to parse receipt data"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pillow>=10.0.0",
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
+    "transformers>=4.45.0",
+    "accelerate>=0.34.0",
+]
