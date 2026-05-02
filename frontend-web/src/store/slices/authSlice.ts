@@ -33,6 +33,18 @@ const authSlice = createSlice({
             state.is_authenticated = AuthenticationStatusEnum.Unauthenticated;
             clearAllTokens();
         },
+        tokensRefreshed(
+            state,
+            { payload }: { payload: { access: string; refresh?: string } },
+        ) {
+            state.auth_token = payload.access;
+            setToken(payload.access);
+            if (payload.refresh) {
+                state.refresh_token = payload.refresh;
+                setRefreshToken(payload.refresh);
+            }
+            state.is_authenticated = AuthenticationStatusEnum.Authenticated;
+        },
     },
     extraReducers: (builder) => {
         builder.addMatcher(
@@ -48,10 +60,10 @@ const authSlice = createSlice({
     },
 });
 
-export const { signedOut } = authSlice.actions;
+export const { signedOut, tokensRefreshed } = authSlice.actions;
 
 export const selectAuthToken = (state: { auth: AuthState }) => state.auth.auth_token;
 export const selectRefreshToken = (state: { auth: AuthState }) => state.auth.refresh_token;
-export const selectAuthenticationStatus = (state: { auth: AuthState }) => state.auth.is_authenticated === AuthenticationStatusEnum.Authenticated;
+export const selectAuthenticationStatus = (state: { auth: AuthState }) => state.auth.is_authenticated !== AuthenticationStatusEnum.Unauthenticated;
 
 export default authSlice.reducer;

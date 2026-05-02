@@ -12,10 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+from financeproject.app_settings import APP_SETTINGS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = APP_SETTINGS.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -95,11 +93,11 @@ DATABASES = {
     # },
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+        "NAME": APP_SETTINGS.DB_NAME,
+        "USER": APP_SETTINGS.DB_USER,
+        "PASSWORD": APP_SETTINGS.DB_PASSWORD,
+        "HOST": APP_SETTINGS.DB_HOST,
+        "PORT": APP_SETTINGS.DB_PORT,
     }
 }
 
@@ -164,8 +162,12 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(hours=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(
+        minutes=APP_SETTINGS.JWT_ACCESS_TOKEN_LIFETIME_MINUTES,
+    ),
+    'REFRESH_TOKEN_LIFETIME': timedelta(
+        hours=APP_SETTINGS.JWT_REFRESH_TOKEN_LIFETIME_HOURS,
+    ),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
