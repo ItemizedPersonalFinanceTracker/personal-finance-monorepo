@@ -28,7 +28,20 @@ SECRET_KEY = APP_SETTINGS.SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+def _comma_separated_list(raw: str) -> list[str]:
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+ALLOWED_HOSTS = _comma_separated_list(APP_SETTINGS.BACKEND_ALLOWED_HOSTS)
+
+_cors_env = APP_SETTINGS.CORS_ALLOWED_ORIGINS.strip()
+if _cors_env:
+    _browser_origins = _comma_separated_list(_cors_env)
+
+CORS_ALLOWED_ORIGINS = _browser_origins
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = list(_browser_origins)
 
 
 # Application definition
@@ -144,13 +157,6 @@ STATIC_URL = 'static/'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

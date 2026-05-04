@@ -25,5 +25,8 @@ class AppSettings(BaseSettings):
     JWT_ACCESS_TOKEN_LIFETIME_MINUTES: int = 60
     JWT_REFRESH_TOKEN_LIFETIME_HOURS: int = 48
 
+    BACKEND_ALLOWED_HOSTS: str = "localhost,127.0.0.1"
+    CORS_ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+
 
 APP_SETTINGS = AppSettings()
