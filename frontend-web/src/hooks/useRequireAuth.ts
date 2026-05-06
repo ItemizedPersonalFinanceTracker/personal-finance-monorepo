@@ -18,7 +18,6 @@ export function useRequireAuth() {
     const { pathname } = useLocation();
 
     useEffect(() => {
-        console.log("authenticationStatus", authenticationStatus);
         if (!authenticationStatus && !isPublicPath(pathname)) {
             navigate("/login");
         }
