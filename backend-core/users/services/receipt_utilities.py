@@ -1,9 +1,10 @@
+from decimal import Decimal
 from django.utils.dateparse import parse_datetime
 from users.models import Receipt
 from users.util import find_or_create_category, update_summary
 
 
-def _create_receipt(user, total, store_name, image=None, date_bought=None, category_name=None):
+def _create_receipt(user, total: Decimal, store_name, image=None, date_bought=None, category_name=None):
     """Shared receipt creation logic for both manual and image-based flows."""
     receipt = Receipt(
         total_spend=total,
@@ -20,7 +21,7 @@ def _create_receipt(user, total, store_name, image=None, date_bought=None, categ
         category.save()
 
     receipt.save()
-    update_summary(float(total), receipt)
+    update_summary(total, receipt)
     return receipt
 
 

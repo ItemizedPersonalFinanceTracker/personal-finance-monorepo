@@ -1,20 +1,14 @@
-import { useGetSummaryQuery } from "../../store/api/homeApi"
 import CategoryBreakdown from "../../components/CategoryBreakdown"
+import SummaryBreakdown from "../../components/SummaryBreakdown"
 
 export default function Home(){
 
-    const { isLoading, data } = useGetSummaryQuery()
-
     return <>
-      <div>
+      <div className="mx-24 flex flex-col gap-10 md:mx-8">
         <p>
           Home
         </p>
-        {
-        isLoading ? <span>Loading...</span> :
-        <span>How much you have spent this year: {data?.year.total_spend}</span>
-        }
-
+        <SummaryBreakdown />
         <CategoryBreakdown />
 
       </div>

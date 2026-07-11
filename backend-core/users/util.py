@@ -113,26 +113,23 @@ def get_affected_trackers_for_receipt(receipt: Receipt):
     
     return trackers
 
-def update_summary(total: float, receipt: Receipt):
+def update_summary(total: Decimal, receipt: Receipt):
     """
     Update SpendTracker instances for week, month, and year based on the receipt.
     Adds the receipt to the appropriate trackers and updates their totals.
     """
-    
     trackers = get_affected_trackers_for_receipt(receipt)
     
     for tracker in trackers:
-        # Add receipt to tracker if not already added
         tracker.receipts.add(receipt)
         
         # Update total spend (convert to Decimal for proper arithmetic)
-        tracker.total_spend = Decimal(str(tracker.total_spend)) + Decimal(str(total))
+        tracker.total_spend = tracker.total_spend + total
         
-        # Update classification_data (categories)
         if receipt.category is not None:
             category_name = receipt.category.category_name
             classification_data = tracker.classification_data or {}
-            classification_data[category_name] = classification_data.get(category_name, 0) + float(total)
+            classification_data[category_name] = round(classification_data.get(category_name, 0) + float(total), 2)
             tracker.classification_data = classification_data
         
         tracker.save()
@@ -205,5 +202,3 @@ def get_affected_trackers_for_receipt_at_date(customer: Customer, receipt_date):
             pass
     
     return trackers
-
-# def update_summary_timeframe()
