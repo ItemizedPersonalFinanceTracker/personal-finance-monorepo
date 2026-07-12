@@ -12,3 +12,8 @@ export interface accountSummaryResponse {
     month: summaryPayload;
     year: summaryPayload;
 }
+
+export interface Category {
+    category_id: number;
+    category_name: string;
+}

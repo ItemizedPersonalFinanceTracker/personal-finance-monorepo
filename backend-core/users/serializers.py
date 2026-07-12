@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from users.models import Customer, Item, Receipt, SpendTracker
+from users.models import Category, Customer, Item, Receipt, SpendTracker
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -32,6 +32,16 @@ class SpendTrackerSerializer(serializers.ModelSerializer):
             "classification_data",
         ]
         read_only_fields = ["id", "last_updated"]
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["category_id", "category_name"]
+        read_only_fields = ["category_id"]
+
+    def validate_category_name(self, value):
+        return value.strip().lower()
 
 
 class ManualReceiptSerializer(serializers.Serializer):
