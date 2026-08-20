@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
     Alert,
     Button,
     Group,
+    Image,
     NumberInput,
     Paper,
     Select,
@@ -18,6 +19,7 @@ import {
     useCreateImageReceiptMutation,
     useCreateManualReceiptMutation,
 } from "../../store/api/receiptApi";
+import ReceiptCameraModal from "./ReceiptCameraModal";
 
 function todayDateValue(): string {
     const today = new Date();
@@ -65,13 +67,24 @@ export default function AddBill() {
     const [createImageReceipt, { isLoading: isImageLoading }] = useCreateImageReceiptMutation();
     const isLoading = isManualLoading || isImageLoading;
 
-    const cameraInputRef = useRef<HTMLInputElement>(null);
     const [storeName, setStoreName] = useState("");
     const [category, setCategory] = useState<string | null>(OTHER_CATEGORY);
     const [amount, setAmount] = useState<number | string>("");
     const [date, setDate] = useState(todayDateValue);
     const [image, setImage] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [cameraOpen, setCameraOpen] = useState(false);
+
+    const assignImage = useCallback((file: File | null) => {
+        setPreviewUrl((prev) => {
+            if (prev) {
+                URL.revokeObjectURL(prev);
+            }
+            return file ? URL.createObjectURL(file) : null;
+        });
+        setImage(file);
+    }, []);
 
     const categoryOptions = useMemo(
         () => [
@@ -89,9 +102,9 @@ export default function AddBill() {
         setCategory(OTHER_CATEGORY);
         setAmount("");
         setDate(todayDateValue());
-        setImage(null);
+        assignImage(null);
         setErrorMessage(null);
-    }, []);
+    }, [assignImage]);
 
     const handleSubmit = useCallback(async () => {
         setErrorMessage(null);
@@ -211,7 +224,7 @@ export default function AddBill() {
                                     accept={IMAGE_MIME_TYPE}
                                     multiple={false}
                                     maxFiles={1}
-                                    onDrop={(files) => setImage(files[0] ?? null)}
+                                    onDrop={(files) => assignImage(files[0] ?? null)}
                                     disabled={isLoading}
                                     h={220}
                                 >
@@ -233,32 +246,29 @@ export default function AddBill() {
                                             </Text>
                                         </Dropzone.Reject>
                                         <Dropzone.Idle>
-                                            <Text size="sm" c="dimmed" ta="center">
-                                                {image
-                                                    ? image.name
-                                                    : "Drag an image here or click to select"}
-                                            </Text>
+                                            {previewUrl ? (
+                                                <Image
+                                                    src={previewUrl}
+                                                    alt="Receipt preview"
+                                                    mah={180}
+                                                    fit="contain"
+                                                    radius="sm"
+                                                />
+                                            ) : (
+                                                <Text size="sm" c="dimmed" ta="center">
+                                                    Drag an image here or click to select
+                                                </Text>
+                                            )}
                                         </Dropzone.Idle>
                                     </Stack>
                                 </Dropzone>
-                                <input
-                                    ref={cameraInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    hidden
-                                    onChange={(e) => {
-                                        setImage(e.target.files?.[0] ?? null);
-                                        e.target.value = "";
-                                    }}
-                                />
                                 <Group gap="xs">
                                     <Button
                                         type="button"
                                         variant="light"
                                         size="compact-sm"
                                         disabled={isLoading}
-                                        onClick={() => cameraInputRef.current?.click()}
+                                        onClick={() => setCameraOpen(true)}
                                     >
                                         Take photo
                                     </Button>
@@ -268,7 +278,7 @@ export default function AddBill() {
                                             variant="subtle"
                                             size="compact-sm"
                                             disabled={isLoading}
-                                            onClick={() => setImage(null)}
+                                            onClick={() => assignImage(null)}
                                         >
                                             Clear image
                                         </Button>
@@ -288,6 +298,11 @@ export default function AddBill() {
                     </Stack>
                 </form>
             </Paper>
+            <ReceiptCameraModal
+                opened={cameraOpen}
+                onClose={() => setCameraOpen(false)}
+                onCapture={assignImage}
+            />
         </div>
     );
 }

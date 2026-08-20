@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useRequireAuth } from "./hooks/useRequireAuth";
 import Login from "./pages/login/Login";
 import Home from "./pages/home/Home";
@@ -21,6 +21,7 @@ export default function RouterWrapper() {
                         <Route index element={<Home />} />
                         <Route path="add_bill" element={<AddBill />} />
                     </Route>
+                    <Route path="/" element={<Navigate to="/home" replace />} />
                 </Routes>
             </ProtectedRoutes>
         </BrowserRouter>

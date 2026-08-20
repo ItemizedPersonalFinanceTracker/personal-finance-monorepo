@@ -2,6 +2,43 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Dev server
+
+```bash
+npm run dev
+```
+
+### Expose to the local network (phone / other devices)
+
+Use `--` so npm forwards the flag to Vite:
+
+```bash
+npm run dev -- --host
+```
+
+Vite will print a **Network** URL (e.g. `http://10.x.x.x:5173/`). Prefer the address on your real Wi‑Fi/LAN — ignore virtual adapters like `192.168.56.x` (VirtualBox/Hyper-V).
+
+Point the API at your machine’s LAN IP in `.env`:
+
+```env
+VITE_API_BASE_URL=http://10.x.x.x:8000
+```
+
+Backend (from `backend-core/`), also bound to the network:
+
+```bash
+uv run manage.py runserver 0.0.0.0:8000
+```
+
+In `backend-core/.env`, allow that host and the frontend origin:
+
+```env
+BACKEND_ALLOWED_HOSTS=localhost,127.0.0.1,10.x.x.x
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://10.x.x.x:5173
+```
+
+Then open the Vite **Network** URL on the other device.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
