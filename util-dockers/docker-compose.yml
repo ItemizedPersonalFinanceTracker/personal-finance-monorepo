@@ -1,0 +1,18 @@
+services:
+  api-https-proxy:
+    build: ./nginx
+    ports:
+      - "${API_HTTPS_PORT:-8443}:443"
+    environment:
+      # Django on the host (Docker Desktop / Compose host-gateway)
+      BACKEND_HOST: ${BACKEND_HOST:-host.docker.internal:8000}
+      # Comma-separated OpenSSL SANs, e.g. DNS:localhost,IP:127.0.0.1,IP:10.0.0.203
+      CERT_SAN: ${CERT_SAN:-DNS:localhost,IP:127.0.0.1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - api_proxy_certs:/etc/nginx/certs
+    restart: unless-stopped
+
+volumes:
+  api_proxy_certs:

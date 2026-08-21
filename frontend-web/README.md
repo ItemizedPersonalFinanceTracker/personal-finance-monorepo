@@ -10,31 +10,34 @@ npm run dev
 
 ### Expose to the local network (phone / other devices)
 
-Use `--` so npm forwards the flag to Vite:
+Vite is configured for HTTPS (`@vitejs/plugin-basic-ssl`) and `server.host: true`. Start it with:
 
 ```bash
-npm run dev -- --host
+npm run dev
 ```
 
-Vite will print a **Network** URL (e.g. `http://10.x.x.x:5173/`). Prefer the address on your real Wi‑Fi/LAN — ignore virtual adapters like `192.168.56.x` (VirtualBox/Hyper-V).
+Vite will print a **Network** URL (e.g. `https://10.x.x.x:5173/`). Prefer the address on your real Wi‑Fi/LAN — ignore virtual adapters like `192.168.56.x` (VirtualBox/Hyper-V). Accept the certificate warning on the phone.
 
-Point the API at your machine’s LAN IP in `.env`:
+By default `VITE_API_BASE_URL` is empty so the browser calls `/users/...` on the Vite origin; Vite proxies those to Django on `http://127.0.0.1:8000`. That avoids mixed content and a second certificate.
 
-```env
-VITE_API_BASE_URL=http://10.x.x.x:8000
+Optional: nginx HTTPS API proxy in `util-dockers/` (direct `https://LAN:8443`). Only needed if something must hit the API without going through Vite. If you point `VITE_API_BASE_URL` at it, open `https://LAN:8443/healthz` once on the device and accept that cert — otherwise `fetch` fails before nginx sees the request.
+
+```bash
+# from util-dockers/
+docker compose up --build -d
 ```
 
-Backend (from `backend-core/`), also bound to the network:
+Backend (from `backend-core/`):
 
 ```bash
 uv run manage.py runserver 0.0.0.0:8000
 ```
 
-In `backend-core/.env`, allow that host and the frontend origin:
+In `backend-core/.env`, allow that host and the **https** frontend origin:
 
 ```env
 BACKEND_ALLOWED_HOSTS=localhost,127.0.0.1,10.x.x.x
-CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://10.x.x.x:5173
+CORS_ALLOWED_ORIGINS=https://localhost:5173,https://127.0.0.1:5173,https://10.x.x.x:5173
 ```
 
 Then open the Vite **Network** URL on the other device.

@@ -6,8 +6,10 @@ import { signedOut, tokensRefreshed } from "../slices/authSlice";
 
 const REFRESH_PATH = "/users/token/refresh";
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+
 const rawBaseQuery = fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_BASE_URL,
+    baseUrl: apiBaseUrl,
     credentials: "include",
     timeout: 10000,
     prepareHeaders: (headers) => {
@@ -21,7 +23,7 @@ const rawBaseQuery = fetchBaseQuery({
 
 /** No Authorization header — refresh uses body only. */
 const refreshBaseQuery = fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_BASE_URL,
+    baseUrl: apiBaseUrl,
     credentials: "include",
     timeout: 10000,
 });
