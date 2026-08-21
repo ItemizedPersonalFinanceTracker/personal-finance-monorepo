@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework.authtoken',
+    "storages",
 
     # local
     "users",
@@ -153,9 +154,39 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 
-# look into storage later
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+_s3_ready = all(
+    (
+        APP_SETTINGS.S3_ACCESS_KEY_ID,
+        APP_SETTINGS.S3_SECRET_ACCESS_KEY,
+        APP_SETTINGS.S3_BUCKET_NAME,
+        APP_SETTINGS.S3_REGION_NAME,
+        APP_SETTINGS.S3_ENDPOINT_URL,
+    )
+)
+if _s3_ready:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "access_key": APP_SETTINGS.S3_ACCESS_KEY_ID,
+                "secret_key": APP_SETTINGS.S3_SECRET_ACCESS_KEY,
+                "bucket_name": APP_SETTINGS.S3_BUCKET_NAME,
+                "region_name": APP_SETTINGS.S3_REGION_NAME,
+                "endpoint_url": APP_SETTINGS.S3_ENDPOINT_URL,
+                "addressing_style": "path",
+                "signature_version": "s3v4",
+                "file_overwrite": False,
+                "querystring_auth": True,
+                "default_acl": None,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 
 REST_FRAMEWORK = {

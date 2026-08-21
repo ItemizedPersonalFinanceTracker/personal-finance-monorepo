@@ -28,5 +28,12 @@ class AppSettings(BaseSettings):
     BACKEND_ALLOWED_HOSTS: str = "localhost,127.0.0.1"
     CORS_ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
 
+    # Supabase Storage is S3-compatible. Leave these unset to keep local media/.
+    S3_ACCESS_KEY_ID: str | None = None
+    S3_SECRET_ACCESS_KEY: str | None = None
+    S3_BUCKET_NAME: str | None = None
+    S3_REGION_NAME: str | None = None
+    S3_ENDPOINT_URL: str | None = None
+
 
 APP_SETTINGS = AppSettings()
