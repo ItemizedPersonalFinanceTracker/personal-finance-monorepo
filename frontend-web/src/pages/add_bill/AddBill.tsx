@@ -19,6 +19,7 @@ import {
     useCreateImageReceiptMutation,
     useCreateManualReceiptMutation,
 } from "../../store/api/receiptApi";
+import AddCategoryButton from "./AddCategoryButton";
 import ReceiptCameraModal from "./ReceiptCameraModal";
 
 function todayDateValue(): string {
@@ -33,7 +34,7 @@ function toDateBought(date: string): string {
     return `${date}T00:00:00`;
 }
 
-function receiptErrorMessage(error: unknown): string {
+function apiErrorMessage(error: unknown, fallback: string): string {
     if (
         error !== null &&
         typeof error === "object" &&
@@ -41,22 +42,27 @@ function receiptErrorMessage(error: unknown): string {
         error.data !== null &&
         typeof error.data === "object"
     ) {
-        const data = error.data as {
-            error?: string;
-            detail?: string;
-            non_field_errors?: string[];
-        };
+        const data = error.data as Record<string, unknown>;
         if (typeof data.error === "string") {
             return data.error;
         }
         if (typeof data.detail === "string") {
             return data.detail;
         }
-        if (Array.isArray(data.non_field_errors) && data.non_field_errors[0]) {
+        if (Array.isArray(data.non_field_errors) && typeof data.non_field_errors[0] === "string") {
             return data.non_field_errors[0];
         }
+        for (const value of Object.values(data)) {
+            if (Array.isArray(value) && typeof value[0] === "string") {
+                return value[0];
+            }
+        }
     }
-    return "Could not add bill. Please try again.";
+    return fallback;
+}
+
+function categoryLabel(name: string): string {
+    return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 const OTHER_CATEGORY = "__other__";
@@ -91,7 +97,7 @@ export default function AddBill() {
             { value: OTHER_CATEGORY, label: "Other" },
             ...categories.map((c) => ({
                 value: c.category_name,
-                label: c.category_name.charAt(0).toUpperCase() + c.category_name.slice(1),
+                label: categoryLabel(c.category_name),
             })),
         ],
         [categories],
@@ -152,7 +158,7 @@ export default function AddBill() {
             });
             resetForm();
         } catch (err) {
-            setErrorMessage(receiptErrorMessage(err));
+            setErrorMessage(apiErrorMessage(err, "Could not add bill. Please try again."));
         }
     }, [
         storeName,
@@ -179,7 +185,7 @@ export default function AddBill() {
                             </Alert>
                         ) : null}
                         <Group align="flex-start" grow preventGrowOverflow={false}>
-                            <Stack gap="md" className="min-w-0 flex-1 basis-0">
+                            <Stack gap="md" className="min-w-0 flex-2 basis-0">
                                 <TextInput
                                     label="Store name"
                                     value={storeName}
@@ -187,15 +193,23 @@ export default function AddBill() {
                                     disabled={isLoading}
                                     required
                                 />
-                                <Select
-                                    label="Category"
-                                    data={categoryOptions}
-                                    value={category}
-                                    onChange={setCategory}
-                                    clearable
-                                    searchable
-                                    disabled={categoriesLoading || isLoading}
-                                />
+                                <Group align="flex-end" gap="xs" wrap="nowrap">
+                                    <Select
+                                        label="Category"
+                                        className="min-w-0 flex-1"
+                                        data={categoryOptions}
+                                        value={category}
+                                        onChange={setCategory}
+                                        clearable
+                                        searchable
+                                        disabled={categoriesLoading || isLoading}
+                                    />
+                                    <AddCategoryButton
+                                        categories={categories}
+                                        disabled={isLoading}
+                                        onCreated={setCategory}
+                                    />
+                                </Group>
                                 <NumberInput
                                     label="Amount"
                                     value={amount}
@@ -226,13 +240,13 @@ export default function AddBill() {
                                     maxFiles={1}
                                     onDrop={(files) => assignImage(files[0] ?? null)}
                                     disabled={isLoading}
-                                    h={220}
+                                    // h={220}
                                 >
                                     <Stack
                                         align="center"
                                         justify="center"
                                         gap="xs"
-                                        mih={180}
+                                        mih={160}
                                         style={{ pointerEvents: "none" }}
                                     >
                                         <Dropzone.Accept>
