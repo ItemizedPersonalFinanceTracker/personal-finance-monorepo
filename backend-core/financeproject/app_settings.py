@@ -15,6 +15,8 @@ class AppSettings(BaseSettings):
     )
 
     SECRET_KEY: str | None = None
+    DEBUG: bool = True
+    SECURE_PROXY_SSL: bool = False
 
     DB_NAME: str | None = None
     DB_USER: str | None = None

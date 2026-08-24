@@ -26,7 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = APP_SETTINGS.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = APP_SETTINGS.DEBUG
+
+if APP_SETTINGS.SECURE_PROXY_SSL:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 def _comma_separated_list(raw: str) -> list[str]:
     return [part.strip() for part in raw.split(",") if part.strip()]

@@ -23,6 +23,7 @@ dependencies = [
     "tzdata==2025.3",
     "django-storages>=1.14.6",
     "boto3>=1.43.77",
+    "gunicorn>=26.1.0",
 ]
 
 [build-system]
