@@ -89,6 +89,17 @@ class ReceiptView(APIView):
         )
         return Response({"receipt_id": receipt.receipt_id}, status=status.HTTP_201_CREATED)
 
+    def delete(self, request, receipt_id, format=None):
+        try:
+            receipt = Receipt.objects.get(receipt_id=receipt_id, customer=request.user)
+        except Receipt.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        remove_receipt_from_trackers(receipt)
+        if receipt.image:
+            receipt.image.delete(save=False)
+        receipt.delete()
+        return Response(status=status.HTTP_200_OK)
 
 class ReceiptDetailView(APIView):
     def get(self, request, pk, format=None):

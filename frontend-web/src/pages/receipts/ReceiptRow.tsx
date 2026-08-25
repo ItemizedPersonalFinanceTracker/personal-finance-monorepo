@@ -1,6 +1,8 @@
-import { Button, Group, Paper, Stack, Text } from "@mantine/core";
+import { Button, Group, Paper, Stack, Text, Tooltip } from "@mantine/core";
 import type { Receipt } from "../../store/api/classes/receipt";
-import { TrashIcon } from "@phosphor-icons/react";
+import { PencilIcon, TrashIcon } from "@phosphor-icons/react";
+import { useDeleteReceiptMutation } from "../../store/api/receiptApi";
+import { useCallback } from "react";
 
 function formatSpend(amount: string) {
     const value = Number(amount);
@@ -23,6 +25,12 @@ function formatDate(dateBought: string) {
 }
 
 export default function ReceiptRow({ receipt }: { receipt: Receipt }) {
+    const [deleteReceipt, { isLoading: isDeleteLoading }] = useDeleteReceiptMutation();
+
+    const handleDelete = useCallback(() => {
+        void deleteReceipt({ receiptId: receipt.receipt_id });
+    }, [deleteReceipt, receipt.receipt_id]);
+
     return (
         <Paper shadow="xs" p="md" radius="md" withBorder>
             <Group justify="space-between" wrap="nowrap" align="center">
@@ -37,6 +45,20 @@ export default function ReceiptRow({ receipt }: { receipt: Receipt }) {
                 <Text fw={700} className="shrink-0 tabular-nums">
                     {formatSpend(receipt.total_spend)}
                 </Text>
+                <Group>
+                    <Tooltip label="Edit receipt">
+                        <Button variant="outline" size="xs">
+                            <PencilIcon color="blue" />
+                        </Button>
+                    </Tooltip>
+                    
+
+                    <Tooltip label="Delete receipt">
+                        <Button variant="outline" size="xs" onClick={handleDelete} disabled={isDeleteLoading}>
+                            <TrashIcon color="red" />
+                        </Button>
+                    </Tooltip>
+                </Group>
             </Group>
         </Paper>
     );

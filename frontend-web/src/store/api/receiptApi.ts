@@ -42,6 +42,13 @@ export const receiptApi = baseApi.injectEndpoints({
             },
             invalidatesTags: ["Summary", "Categories", "Receipts"],
         }),
+        deleteReceipt: build.mutation<void, { receiptId: number }>({
+            query: ({ receiptId }) => ({
+                url: `/users/receipts/${receiptId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Summary", "Categories", "Receipts"],
+        }),
         getReceipts: build.infiniteQuery<GetReceiptsResponse, void, number>({
             infiniteQueryOptions: {
                 initialPageParam: 1,
@@ -62,4 +69,5 @@ export const {
     useCreateManualReceiptMutation,
     useCreateImageReceiptMutation,
     useGetReceiptsInfiniteQuery,
+    useDeleteReceiptMutation,
 } = receiptApi;
