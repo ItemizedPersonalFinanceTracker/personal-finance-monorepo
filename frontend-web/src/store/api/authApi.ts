@@ -5,6 +5,7 @@ import type {
     registerRequest,
     registerResponse,
 } from "./classes/auth_objects";
+import { getRefreshToken } from "./tokenStorage";
 
 export const authApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
@@ -28,6 +29,7 @@ export const authApi = baseApi.injectEndpoints({
             query: () => ({
                 url: "/users/logout",
                 method: "POST",
+                body: { refresh: getRefreshToken() },
             }),
             // wipe state
             async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
