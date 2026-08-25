@@ -16,3 +16,18 @@ export interface CreateImageReceiptRequest {
 export interface CreateReceiptResponse {
     receipt_id: number;
 }
+
+
+export interface Receipt {
+    receipt_id: number;
+    total_spend: string;
+    store_name: string;
+    date_bought: string;
+}
+
+export interface GetReceiptsResponse {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: Receipt[];
+}

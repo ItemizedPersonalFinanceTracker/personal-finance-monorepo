@@ -24,6 +24,11 @@ export default function NavDrawer({ opened, onClose }: NavDrawerProps) {
         onClose();
     };
 
+    const goReceipts = () => {
+        navigate("/home/receipts");
+        onClose();
+    };
+
     const handleSignOut = async () => {
         onClose();
         try {
@@ -52,6 +57,9 @@ export default function NavDrawer({ opened, onClose }: NavDrawerProps) {
                 </Button>
                 <Button fullWidth variant="default" onClick={goAddBill}>
                     Add a bill
+                </Button>
+                <Button fullWidth variant="default" onClick={goReceipts}>
+                    Receipts
                 </Button>
                 <Button
                     fullWidth

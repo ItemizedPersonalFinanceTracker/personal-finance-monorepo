@@ -3,7 +3,10 @@ import type {
     CreateImageReceiptRequest,
     CreateManualReceiptRequest,
     CreateReceiptResponse,
+    GetReceiptsResponse,
 } from "./classes/receipt";
+
+const RECEIPT_PAGE_SIZE = 10;
 
 export const receiptApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
@@ -39,8 +42,24 @@ export const receiptApi = baseApi.injectEndpoints({
             },
             invalidatesTags: ["Summary", "Categories", "Receipts"],
         }),
+        getReceipts: build.infiniteQuery<GetReceiptsResponse, void, number>({
+            infiniteQueryOptions: {
+                initialPageParam: 1,
+                getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+                    lastPage.next ? lastPageParam + 1 : undefined,
+            },
+            query: ({ pageParam }) => ({
+                url: `/users/receipts?page=${pageParam}&page_size=${RECEIPT_PAGE_SIZE}`,
+                method: "GET",
+            }),
+            providesTags: ["Receipts"],
+        }),
     }),
     overrideExisting: false,
 });
 
-export const { useCreateManualReceiptMutation, useCreateImageReceiptMutation } = receiptApi;
+export const {
+    useCreateManualReceiptMutation,
+    useCreateImageReceiptMutation,
+    useGetReceiptsInfiniteQuery,
+} = receiptApi;
