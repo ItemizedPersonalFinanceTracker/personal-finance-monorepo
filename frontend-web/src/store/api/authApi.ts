@@ -15,13 +15,29 @@ export const authApi = baseApi.injectEndpoints({
                 body,
             }),
             invalidatesTags: ["Auth"],
+            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+                try {
+                    await queryFulfilled;
+                    dispatch(baseApi.util.resetApiState());
+                } catch {
+                    // Login failed; keep existing cache.
+                }
+            },
         }),
         logout: build.mutation<void, void>({
             query: () => ({
                 url: "/users/logout",
                 method: "POST",
             }),
-            invalidatesTags: ["Auth"],
+            // wipe state
+            async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+                try {
+                    await queryFulfilled;
+                } catch {
+                    // Local sign-out still applies if the server call fails.
+                }
+                dispatch(baseApi.util.resetApiState());
+            },
         }),
         register: build.mutation<registerResponse, registerRequest>({
             query: (body) => ({
