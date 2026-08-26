@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.utils.dateparse import parse_datetime
 from users.models import Receipt
-from users.util import find_or_create_category, update_summary
+from users.util import find_or_create_category, update_receipt_in_trackers, update_summary
 
 
 def _create_receipt(user, total: Decimal, store_name, image=None, date_bought=None, category_name=None):
@@ -22,6 +22,37 @@ def _create_receipt(user, total: Decimal, store_name, image=None, date_bought=No
 
     receipt.save()
     update_summary(total, receipt)
+    return receipt
+
+
+def _update_receipt(
+    receipt,
+    total=None,
+    store_name=None,
+    date_bought=None,
+    category_name=None,
+    update_category=False,
+):
+    """Apply validated manual-receipt fields and keep spend trackers in sync."""
+    old_date = receipt.date_bought
+
+    if total is not None:
+        receipt.total_spend = total
+    if store_name is not None:
+        receipt.store_name = store_name
+    if date_bought is not None:
+        receipt.date_bought = date_bought
+
+    if update_category:
+        if category_name:
+            category = find_or_create_category(category_name, receipt.customer)
+            receipt.category = category
+            category.save()
+        else:
+            receipt.category = None
+
+    receipt.save()
+    update_receipt_in_trackers(receipt, old_date=old_date)
     return receipt
 
 

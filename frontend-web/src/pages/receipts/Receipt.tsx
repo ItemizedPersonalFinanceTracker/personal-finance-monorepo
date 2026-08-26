@@ -1,8 +1,11 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Loader, Stack, Text, Title } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
 import { useGetReceiptsInfiniteQuery } from "../../store/api/receiptApi";
 import ReceiptRow from "./ReceiptRow";
+import type { Receipt } from "../../store/api/classes/receipt";
+import EditReceiptButtonModal from "./EditReceiptModal";
+import { useGetCategoriesQuery } from "../../store/api/homeApi";
 
 export default function Receipts() {
     const {
@@ -14,14 +17,23 @@ export default function Receipts() {
         fetchNextPage,
     } = useGetReceiptsInfiniteQuery();
     const { ref, entry } = useIntersection({ threshold: 0 });
-
+    const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
     const receipts = data?.pages.flatMap((page) => page.results) ?? [];
+    const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+
+    const openEditModal = useCallback((receipt: Receipt) => {
+        setSelectedReceipt(receipt);
+    }, []);
 
     useEffect(() => {
         if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
             void fetchNextPage();
         }
     }, [entry?.isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    const closeEditModal = useCallback(() => {
+        setSelectedReceipt(null);
+    }, []);
 
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-6">
@@ -39,7 +51,7 @@ export default function Receipts() {
             ) : (
                 <Stack gap="sm">
                     {receipts.map((receipt) => (
-                        <ReceiptRow key={receipt.receipt_id} receipt={receipt} />
+                        <ReceiptRow key={receipt.receipt_id} receipt={receipt} openEditModal={openEditModal} />
                     ))}
                     {hasNextPage ? (
                         <div ref={ref} className="flex justify-center py-3">
@@ -52,6 +64,15 @@ export default function Receipts() {
                     )}
                 </Stack>
             )}
+            {selectedReceipt && !categoriesLoading ? (
+                <EditReceiptButtonModal
+                    opened
+                    receipt={selectedReceipt}
+                    categories={categories}
+                    handleClose={closeEditModal}
+                />
+            ) : null}
+
         </div>
     );
 }

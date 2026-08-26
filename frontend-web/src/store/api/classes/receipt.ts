@@ -5,6 +5,14 @@ export interface CreateManualReceiptRequest {
     category_name?: string | null;
 }
 
+export interface UpdateManualReceiptRequest {
+    receiptId: number;
+    total: number;
+    storeName: string;
+    dateBought?: string | null;
+    category_name?: string | null;
+}
+
 export interface CreateImageReceiptRequest {
     receiptImage: File;
     total?: number | null;
@@ -23,6 +31,7 @@ export interface Receipt {
     total_spend: string;
     store_name: string;
     date_bought: string;
+    category_id: number | null;
 }
 
 export interface GetReceiptsResponse {

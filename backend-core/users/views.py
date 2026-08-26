@@ -26,7 +26,7 @@ from users.serializers import (
     SpendTrackerSerializer,
 )
 from users.models import Category, Receipt, SpendTracker
-from users.services.receipt_utilities import _create_receipt, _apply_receipt_filters
+from users.services.receipt_utilities import _apply_receipt_filters, _create_receipt, _update_receipt
 
 
 class ReceiptListPagination(PageNumberPagination):
@@ -89,17 +89,6 @@ class ReceiptView(APIView):
         )
         return Response({"receipt_id": receipt.receipt_id}, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, receipt_id, format=None):
-        try:
-            receipt = Receipt.objects.get(receipt_id=receipt_id, customer=request.user)
-        except Receipt.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        remove_receipt_from_trackers(receipt)
-        if receipt.image:
-            receipt.image.delete(save=False)
-        receipt.delete()
-        return Response(status=status.HTTP_200_OK)
 
 class ReceiptDetailView(APIView):
     def get(self, request, pk, format=None):
@@ -111,6 +100,26 @@ class ReceiptDetailView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = ReceiptDetailSerializer(receipt, context={"request": request})
         return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        try:
+            receipt = Receipt.objects.get(receipt_id=pk, customer=request.user)
+        except Receipt.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ManualReceiptSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        receipt = _update_receipt(
+            receipt,
+            total=data.get("total"),
+            store_name=data.get("storeName"),
+            date_bought=data.get("dateBought"),
+            category_name=data.get("category_name"),
+            update_category="category_name" in request.data,
+        )
+        return Response({"receipt_id": receipt.receipt_id})
 
     def delete(self, request, pk, format=None):
         try:

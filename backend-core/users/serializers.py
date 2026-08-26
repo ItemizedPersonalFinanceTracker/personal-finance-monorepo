@@ -71,7 +71,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
 class ReceiptListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Receipt
-        fields = ["receipt_id", "store_name", "date_bought", "total_spend"]
+        fields = ["receipt_id", "store_name", "date_bought", "total_spend", "category_id"]
 
 
 class ItemSerializer(serializers.ModelSerializer):

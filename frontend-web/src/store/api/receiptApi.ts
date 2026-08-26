@@ -4,6 +4,7 @@ import type {
     CreateManualReceiptRequest,
     CreateReceiptResponse,
     GetReceiptsResponse,
+    UpdateManualReceiptRequest,
 } from "./classes/receipt";
 
 const RECEIPT_PAGE_SIZE = 10;
@@ -16,7 +17,15 @@ export const receiptApi = baseApi.injectEndpoints({
                 method: "POST",
                 body,
             }),
-            invalidatesTags: ["Summary", "Categories", "Receipts"],
+            invalidatesTags: ["Summary", "Receipts"],
+        }),
+        updateManualReceipt: build.mutation<CreateReceiptResponse, UpdateManualReceiptRequest>({
+            query: ({ receiptId, ...body }) => ({
+                url: `/users/receipts/${receiptId}`,
+                method: "PUT",
+                body,
+            }),
+            invalidatesTags: ["Summary", "Receipts"],
         }),
         createImageReceipt: build.mutation<CreateReceiptResponse, CreateImageReceiptRequest>({
             query: ({ receiptImage, total, storeName, dateBought, category_name }) => {
@@ -40,14 +49,14 @@ export const receiptApi = baseApi.injectEndpoints({
                     body,
                 };
             },
-            invalidatesTags: ["Summary", "Categories", "Receipts"],
+            invalidatesTags: ["Summary", "Receipts"],
         }),
         deleteReceipt: build.mutation<void, { receiptId: number }>({
             query: ({ receiptId }) => ({
                 url: `/users/receipts/${receiptId}`,
                 method: "DELETE",
             }),
-            invalidatesTags: ["Summary", "Categories", "Receipts"],
+            invalidatesTags: ["Summary", "Receipts"],
         }),
         getReceipts: build.infiniteQuery<GetReceiptsResponse, void, number>({
             infiniteQueryOptions: {
@@ -67,6 +76,7 @@ export const receiptApi = baseApi.injectEndpoints({
 
 export const {
     useCreateManualReceiptMutation,
+    useUpdateManualReceiptMutation,
     useCreateImageReceiptMutation,
     useGetReceiptsInfiniteQuery,
     useDeleteReceiptMutation,

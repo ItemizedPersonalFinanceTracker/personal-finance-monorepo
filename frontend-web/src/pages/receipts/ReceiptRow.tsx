@@ -24,7 +24,7 @@ function formatDate(dateBought: string) {
     });
 }
 
-export default function ReceiptRow({ receipt }: { receipt: Receipt }) {
+export default function ReceiptRow({ receipt, openEditModal }: { receipt: Receipt, openEditModal: (receipt: Receipt) => void }) {
     const [deleteReceipt, { isLoading: isDeleteLoading }] = useDeleteReceiptMutation();
 
     const handleDelete = useCallback(() => {
@@ -47,7 +47,7 @@ export default function ReceiptRow({ receipt }: { receipt: Receipt }) {
                 </Text>
                 <Group>
                     <Tooltip label="Edit receipt">
-                        <Button variant="outline" size="xs">
+                        <Button variant="outline" size="xs" onClick={() => openEditModal(receipt)}>
                             <PencilIcon color="blue" />
                         </Button>
                     </Tooltip>
