@@ -1,8 +1,9 @@
-import { Button, Group, Paper, Stack, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Group, Paper, Stack, Text, Tooltip } from "@mantine/core";
 import type { Receipt } from "../../store/api/classes/receipt";
 import { PencilIcon, TrashIcon } from "@phosphor-icons/react";
 import { useDeleteReceiptMutation } from "../../store/api/receiptApi";
 import { useCallback } from "react";
+import { categoryLabel } from "../../utility_functions/util";
 
 function formatSpend(amount: string) {
     const value = Number(amount);
@@ -24,7 +25,15 @@ function formatDate(dateBought: string) {
     });
 }
 
-export default function ReceiptRow({ receipt, openEditModal }: { receipt: Receipt, openEditModal: (receipt: Receipt) => void }) {
+export default function ReceiptRow({
+    receipt,
+    categoryName,
+    openEditModal,
+}: {
+    receipt: Receipt;
+    categoryName: string | null;
+    openEditModal: (receipt: Receipt) => void;
+}) {
     const [deleteReceipt, { isLoading: isDeleteLoading }] = useDeleteReceiptMutation();
 
     const handleDelete = useCallback(() => {
@@ -32,9 +41,9 @@ export default function ReceiptRow({ receipt, openEditModal }: { receipt: Receip
     }, [deleteReceipt, receipt.receipt_id]);
 
     return (
-        <Paper shadow="xs" p="md" radius="md" withBorder>
-            <Group justify="space-between" wrap="nowrap" align="center">
-                <Stack gap={2} className="min-w-0">
+        <Paper shadow="xs" p={{ base: "sm", sm: "md" }} radius="md" withBorder>
+            <div className="grid grid-cols-[minmax(0,1fr)_6.5rem] items-center gap-x-3 gap-y-1 sm:grid-cols-[minmax(0,1fr)_8rem_7rem_auto] sm:gap-x-4 sm:gap-y-0">
+                <Stack gap={2} className="min-w-0 max-sm:col-start-1 max-sm:row-start-1">
                     <Text fw={600} truncate>
                         {receipt.store_name}
                     </Text>
@@ -42,24 +51,38 @@ export default function ReceiptRow({ receipt, openEditModal }: { receipt: Receip
                         {formatDate(receipt.date_bought)}
                     </Text>
                 </Stack>
-                <Text fw={700} className="shrink-0 tabular-nums">
+                <Text size="sm" c="dimmed" ta="left" truncate className="max-sm:col-start-1 max-sm:row-start-2">
+                    {categoryName ? categoryLabel(categoryName) : "Other"}
+                </Text>
+                <Text fw={700} ta="left" className="tabular-nums max-sm:col-start-2 max-sm:row-start-2">
                     {formatSpend(receipt.total_spend)}
                 </Text>
-                <Group>
+                <Group gap={6} wrap="nowrap" className="max-sm:col-start-2 max-sm:row-start-1">
                     <Tooltip label="Edit receipt">
-                        <Button variant="outline" size="xs" onClick={() => openEditModal(receipt)}>
-                            <PencilIcon color="blue" />
-                        </Button>
+                        <ActionIcon
+                            variant="outline"
+                            size="sm"
+                            color="blue"
+                            aria-label="Edit receipt"
+                            onClick={() => openEditModal(receipt)}
+                        >
+                            <PencilIcon size={16} />
+                        </ActionIcon>
                     </Tooltip>
-                    
-
                     <Tooltip label="Delete receipt">
-                        <Button variant="outline" size="xs" onClick={handleDelete} disabled={isDeleteLoading}>
-                            <TrashIcon color="red" />
-                        </Button>
+                        <ActionIcon
+                            variant="outline"
+                            size="sm"
+                            color="red"
+                            aria-label="Delete receipt"
+                            onClick={handleDelete}
+                            disabled={isDeleteLoading}
+                        >
+                            <TrashIcon size={16} />
+                        </ActionIcon>
                     </Tooltip>
                 </Group>
-            </Group>
+            </div>
         </Paper>
     );
 }

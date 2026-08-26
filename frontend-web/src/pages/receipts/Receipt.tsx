@@ -51,7 +51,14 @@ export default function Receipts() {
             ) : (
                 <Stack gap="sm">
                     {receipts.map((receipt) => (
-                        <ReceiptRow key={receipt.receipt_id} receipt={receipt} openEditModal={openEditModal} />
+                        <ReceiptRow
+                            key={receipt.receipt_id}
+                            receipt={receipt}
+                            categoryName={
+                                categories.find((c) => c.category_id === receipt.category_id)?.category_name ?? null
+                            }
+                            openEditModal={openEditModal}
+                        />
                     ))}
                     {hasNextPage ? (
                         <div ref={ref} className="flex justify-center py-3">
