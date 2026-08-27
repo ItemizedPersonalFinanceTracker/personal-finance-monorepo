@@ -45,7 +45,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ManualReceiptSerializer(serializers.Serializer):
-    total = serializers.DecimalField(min_value=0, max_digits=19, decimal_places=2)
+    total = serializers.DecimalField(max_digits=19, decimal_places=2)
     storeName = serializers.CharField()
     dateBought = serializers.DateTimeField(required=False, allow_null=True, default=None)
     category_name = serializers.CharField(required=False, allow_null=True, default=None)
@@ -53,7 +53,7 @@ class ManualReceiptSerializer(serializers.Serializer):
 
 class ImageReceiptSerializer(serializers.Serializer):
     receiptImage = serializers.ImageField()
-    total = serializers.DecimalField(min_value=0, max_digits=19, decimal_places=2, required=False, allow_null=True, default=None)
+    total = serializers.DecimalField(max_digits=19, decimal_places=2, required=False, allow_null=True, default=None)
     storeName = serializers.CharField(required=False, allow_null=True, default=None)
     dateBought = serializers.DateTimeField(required=False, allow_null=True, default=None)
     category_name = serializers.CharField(required=False, allow_null=True, default=None)
@@ -66,6 +66,17 @@ class ReceiptSerializer(serializers.ModelSerializer):
             "receipt_id", "total_spend", "image", "date_bought", "store_name", "category"
         ]
         depth = 1
+
+class ReceiptBulkSerializer(serializers.Serializer):
+    receipts = ManualReceiptSerializer(many=True, allow_empty=False)
+
+    def validate_receipts(self, value):
+        for receipt in value:
+            if not (receipt.get("storeName") or "").strip():
+                raise serializers.ValidationError("Each receipt needs a store name.")
+            if not receipt.get("dateBought"):
+                raise serializers.ValidationError("Each receipt needs a date.")
+        return value
 
 
 class ReceiptListSerializer(serializers.ModelSerializer):

@@ -27,7 +27,7 @@ export default function CategoryBreakdown() {
 
     const get_pie_data = useCallback(() => {
         const data = get_classification_data();
-        const color_array: string[] = ["#FF6384", "#36A2EB", "#FFCE56", "#FF6384", "#36A2EB", "#FFCE56"];
+        const color_array: string[] = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40", "#4CAF50", "#E91E63", "#00BCD4", "#795548"];
         return {
             labels: Object.keys(data),
             datasets: [{data: Object.values(data), label: "Category Breakdown", backgroundColor: color_array}],

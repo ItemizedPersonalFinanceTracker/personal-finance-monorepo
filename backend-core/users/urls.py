@@ -31,6 +31,7 @@ urlpatterns = [
     path("receipts", views.ReceiptView.as_view()),
     path("receipts/<int:pk>", views.ReceiptDetailView.as_view()),
     path("receipts/scan", views.ReceiptScanView.as_view()),
+    path("receipts/bulk", views.ReceiptBulkView.as_view()),
     path("categories", views.CategoryView.as_view()),
     path("categories/<int:pk>", views.CategoryView.as_view()),
 

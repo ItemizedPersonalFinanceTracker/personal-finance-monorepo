@@ -41,7 +41,7 @@ export default function EditReceiptButtonModal({ opened, receipt, categories, ha
             setErrorMessage("Enter a store name, amount, and date.");
             return;
         }
-        if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+        if (!Number.isFinite(parsedAmount)) {
             setErrorMessage("Enter a valid amount.");
             return;
         }
@@ -108,7 +108,6 @@ export default function EditReceiptButtonModal({ opened, receipt, categories, ha
                         label="Amount"
                         value={amount}
                         onChange={setAmount}
-                        min={0}
                         decimalScale={2}
                         fixedDecimalScale
                         prefix="$"

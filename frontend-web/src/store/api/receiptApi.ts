@@ -2,6 +2,8 @@ import { baseApi } from "./baseApi";
 import type {
     CreateImageReceiptRequest,
     CreateManualReceiptRequest,
+    CreateReceiptBulkRequest,
+    CreateReceiptBulkResponse,
     CreateReceiptResponse,
     GetReceiptsResponse,
     UpdateManualReceiptRequest,
@@ -70,6 +72,14 @@ export const receiptApi = baseApi.injectEndpoints({
             }),
             providesTags: ["Receipts"],
         }),
+        createReceiptBulk: build.mutation<CreateReceiptBulkResponse, CreateReceiptBulkRequest>({
+            query: (body) => ({
+                url: "/users/receipts/bulk",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Summary", "Receipts"],
+        }),
     }),
     overrideExisting: false,
 });
@@ -80,4 +90,5 @@ export const {
     useCreateImageReceiptMutation,
     useGetReceiptsInfiniteQuery,
     useDeleteReceiptMutation,
+    useCreateReceiptBulkMutation,
 } = receiptApi;

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Loader, Stack, Text, Title } from "@mantine/core";
+import { ActionIcon, Alert, Group, Loader, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { useIntersection } from "@mantine/hooks";
+import { DownloadIcon } from "@phosphor-icons/react";
 import { useGetReceiptsInfiniteQuery } from "../../store/api/receiptApi";
 import ReceiptRow from "./ReceiptRow";
 import type { Receipt } from "../../store/api/classes/receipt";
 import EditReceiptButtonModal from "./EditReceiptModal";
 import { useGetCategoriesQuery } from "../../store/api/homeApi";
+import ImportFromExcelModal from "./ImportFromExcelModal";
 
 export default function Receipts() {
     const {
@@ -20,6 +22,7 @@ export default function Receipts() {
     const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
     const receipts = data?.pages.flatMap((page) => page.results) ?? [];
     const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+    const [openImportFromExcelModal, setOpenImportFromExcelModal] = useState(false);
 
     const openEditModal = useCallback((receipt: Receipt) => {
         setSelectedReceipt(receipt);
@@ -37,9 +40,22 @@ export default function Receipts() {
 
     return (
         <div className="mx-auto w-full max-w-2xl px-4 py-6">
-            <Title order={2} mb="md">
-                Receipts
-            </Title>
+            <Group justify="space-between" mb="md">
+                <Title order={2}>
+                    Receipts
+                </Title>
+                <Tooltip label="Import receipts">
+                    <ActionIcon
+                        variant="outline"
+                        size="sm"
+                        color="blue"
+                        aria-label="Import receipts"
+                        onClick={() => setOpenImportFromExcelModal(true)}
+                    >
+                        <DownloadIcon size={16} />
+                    </ActionIcon>
+                </Tooltip>
+            </Group>
             {isLoading ? (
                 <Loader color="blue" />
             ) : isError ? (
@@ -79,7 +95,10 @@ export default function Receipts() {
                     handleClose={closeEditModal}
                 />
             ) : null}
-
+            <ImportFromExcelModal
+                open={openImportFromExcelModal}
+                onClose={() => setOpenImportFromExcelModal(false)}
+            />
         </div>
     );
 }

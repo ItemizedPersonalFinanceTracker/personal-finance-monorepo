@@ -1,7 +1,9 @@
+from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
 
 from django import utils
+from django.db import transaction
 
 from users.models import Category, Customer, Receipt, SpendTracker
 
@@ -18,10 +20,10 @@ def extract_receipt_data(image_file):
 
 def find_or_create_category(category_name:str, user:Customer):
     clean_name = category_name.strip().lower()
-    category = Category.objects.filter(category_name=clean_name).first()
-    if(category == None):
-        category = Category.objects.create(category_name = clean_name, customer=user)
-
+    category, _ = Category.objects.get_or_create(
+        category_name=clean_name,
+        customer=user,
+    )
     return category
 
 def is_in_current_week(date):
@@ -133,6 +135,93 @@ def update_summary(total: Decimal, receipt: Receipt):
             tracker.classification_data = classification_data
         
         tracker.save()
+
+def update_summary_bulk(receipts: list[Receipt]):
+    """
+    Same effect as calling update_summary for each receipt, but groups receipts
+    that share a week/month/year tracker so each tracker is loaded and saved once.
+    """
+    if not receipts:
+        return
+
+    grouped: dict[tuple, list[Receipt]] = defaultdict(list)
+    for receipt in receipts:
+        for tracker_type in (
+            SpendTracker.WEEK_TRACKER,
+            SpendTracker.MONTH_TRACKER,
+            SpendTracker.YEAR_TRACKER,
+        ):
+            starting_date = get_starting_date_for_period(tracker_type, receipt.date_bought)
+            grouped[(receipt.customer_id, tracker_type, starting_date)].append(receipt)
+
+    category_ids = {receipt.category_id for receipt in receipts if receipt.category_id}
+    categories_by_id = Category.objects.in_bulk(category_ids) if category_ids else {}
+
+    customer_ids = {key[0] for key in grouped}
+    tracker_types = {key[1] for key in grouped}
+    starting_dates = {key[2] for key in grouped}
+
+    existing = {
+        (tracker.customer_id, tracker.tracker_type, tracker.starting_date): tracker
+        for tracker in SpendTracker.objects.filter(
+            customer_id__in=customer_ids,
+            tracker_type__in=tracker_types,
+            starting_date__in=starting_dates,
+        )
+    }
+
+    missing = []
+    for customer_id, tracker_type, starting_date in grouped:
+        if (customer_id, tracker_type, starting_date) not in existing:
+            missing.append(
+                SpendTracker(
+                    customer_id=customer_id,
+                    tracker_type=tracker_type,
+                    starting_date=starting_date,
+                    total_spend=0,
+                    classification_data={},
+                )
+            )
+
+    with transaction.atomic():
+        if missing:
+            created = SpendTracker.objects.bulk_create(missing)
+            for tracker in created:
+                existing[(tracker.customer_id, tracker.tracker_type, tracker.starting_date)] = tracker
+
+        trackers_to_update = []
+        through_rows = []
+        ThroughModel = SpendTracker.receipts.through
+        now = utils.timezone.now()
+
+        for key, group in grouped.items():
+            tracker = existing[key]
+            classification_data = dict(tracker.classification_data or {})
+            total_delta = Decimal("0")
+
+            for receipt in group:
+                total_delta += receipt.total_spend
+                category = categories_by_id.get(receipt.category_id)
+                if category is not None:
+                    category_name = category.category_name
+                    classification_data[category_name] = round(
+                        classification_data.get(category_name, 0) + float(receipt.total_spend),
+                        2,
+                    )
+                through_rows.append(
+                    ThroughModel(spendtracker_id=tracker.pk, receipt_id=receipt.pk)
+                )
+
+            tracker.total_spend = tracker.total_spend + total_delta
+            tracker.classification_data = classification_data
+            tracker.last_updated = now
+            trackers_to_update.append(tracker)
+
+        SpendTracker.objects.bulk_update(
+            trackers_to_update,
+            ["total_spend", "classification_data", "last_updated"],
+        )
+        ThroughModel.objects.bulk_create(through_rows, ignore_conflicts=True)
 
 def remove_receipt_from_trackers(receipt: Receipt):
     """

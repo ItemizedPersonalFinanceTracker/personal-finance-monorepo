@@ -92,7 +92,7 @@ export default function AddBill() {
             setErrorMessage("Enter a store name, amount, and date.");
             return;
         }
-        if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
+        if (!Number.isFinite(parsedAmount)) {
             setErrorMessage("Enter a valid amount.");
             return;
         }
@@ -180,7 +180,6 @@ export default function AddBill() {
                                     label="Amount"
                                     value={amount}
                                     onChange={setAmount}
-                                    min={0}
                                     decimalScale={2}
                                     fixedDecimalScale
                                     prefix="$"

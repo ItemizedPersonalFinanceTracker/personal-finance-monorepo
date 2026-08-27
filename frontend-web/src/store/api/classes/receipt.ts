@@ -25,6 +25,13 @@ export interface CreateReceiptResponse {
     receipt_id: number;
 }
 
+export interface CreateReceiptBulkRequest {
+    receipts: CreateManualReceiptRequest[];
+}
+
+export interface CreateReceiptBulkResponse {
+    receipt_ids: number[];
+}
 
 export interface Receipt {
     receipt_id: number;

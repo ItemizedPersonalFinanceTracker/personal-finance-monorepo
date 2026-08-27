@@ -20,13 +20,14 @@ from users.serializers import (
     CategorySerializer,
     ImageReceiptSerializer,
     ManualReceiptSerializer,
+    ReceiptBulkSerializer,
     ReceiptDetailSerializer,
     ReceiptListSerializer,
     RegisterSerializer,
     SpendTrackerSerializer,
 )
 from users.models import Category, Receipt, SpendTracker
-from users.services.receipt_utilities import _apply_receipt_filters, _create_receipt, _update_receipt
+from users.services.receipt_utilities import _apply_receipt_filters, _bulk_create_receipts, _create_receipt, _update_receipt
 
 
 class ReceiptListPagination(PageNumberPagination):
@@ -163,7 +164,16 @@ class ReceiptScanView(APIView):
         )
         return Response({"receipt_id": receipt.receipt_id}, status=status.HTTP_201_CREATED)
 
-
+class ReceiptBulkView(APIView):
+    def post(self, request, format=None):
+        ser = ReceiptBulkSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
+        receipts = _bulk_create_receipts(request.user, data["receipts"])
+        return Response(
+            {"receipt_ids": [receipt.receipt_id for receipt in receipts]},
+            status=status.HTTP_201_CREATED,
+        )
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]

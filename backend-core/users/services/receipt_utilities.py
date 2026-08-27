@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.utils.dateparse import parse_datetime
-from users.models import Receipt
-from users.util import find_or_create_category, update_receipt_in_trackers, update_summary
+from users.models import Category, Receipt
+from users.util import find_or_create_category, update_receipt_in_trackers, update_summary, update_summary_bulk
 
 
 def _create_receipt(user, total: Decimal, store_name, image=None, date_bought=None, category_name=None):
@@ -24,6 +24,49 @@ def _create_receipt(user, total: Decimal, store_name, image=None, date_bought=No
     update_summary(total, receipt)
     return receipt
 
+
+def _bulk_create_receipts(user, receipts: list[dict]):
+    """Bulk create receipts using the same field names as a single manual receipt."""
+    distinct_names = set()
+    for receipt in receipts:
+        category_name = receipt.get("category_name")
+        if category_name:
+            distinct_names.add(category_name.strip().lower())
+
+    category_objects = {
+        category.category_name: category
+        for category in Category.objects.filter(
+            category_name__in=distinct_names,
+            customer=user,
+        )
+    }
+    missing = [
+        Category(category_name=name, customer=user)
+        for name in distinct_names
+        if name not in category_objects
+    ]
+    if missing:
+        for category in Category.objects.bulk_create(missing):
+            category_objects[category.category_name] = category
+
+    receipts_objects = []
+    for receipt in receipts:
+        temp_receipt = Receipt(
+            total_spend=receipt["total"],
+            store_name=receipt["storeName"].strip(),
+            customer=user,
+        )
+        if receipt.get("dateBought") is not None:
+            temp_receipt.date_bought = receipt["dateBought"]
+
+        category_name = receipt.get("category_name")
+        if category_name:
+            temp_receipt.category = category_objects[category_name.strip().lower()]
+        receipts_objects.append(temp_receipt)
+
+    created = Receipt.objects.bulk_create(receipts_objects)
+    update_summary_bulk(created)
+    return created
 
 def _update_receipt(
     receipt,

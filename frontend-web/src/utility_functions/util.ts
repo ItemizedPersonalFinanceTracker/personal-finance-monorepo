@@ -40,8 +40,16 @@ export function todayDateValue(): string {
     return `${year}-${month}-${day}`;
 }
 
+function padTimePart(value: number): string {
+    return String(value).padStart(2, "0");
+}
+
 export function toDateBought(date: string): string {
-    return `${date}T00:00:00`;
+    if (date === todayDateValue()) {
+        const now = new Date();
+        return `${date}T${padTimePart(now.getHours())}:${padTimePart(now.getMinutes())}:${padTimePart(now.getSeconds())}`;
+    }
+    return `${date}T12:00:00`;
 }
 
 export function toDateInputValue(dateBought: string): string {
