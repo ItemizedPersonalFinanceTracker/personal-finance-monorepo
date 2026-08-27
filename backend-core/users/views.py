@@ -1,5 +1,6 @@
-from datetime import datetime
-from django.utils.dateparse import parse_datetime
+from datetime import datetime, timedelta
+from django.utils.dateparse import parse_date, parse_datetime
+from django.utils import timezone as dj_timezone
 
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
@@ -62,6 +63,27 @@ class AccountSummaryView(APIView):
             'year': serializer.data[2]
         })
 
+class SpendingTrackerView(APIView):
+    def get(self, request, format=None):
+        user = request.user
+        tracker_type = request.query_params.get("tracker_type")
+        if tracker_type not in [SpendTracker.WEEK_TRACKER, SpendTracker.MONTH_TRACKER, SpendTracker.YEAR_TRACKER]:
+            tracker_type = SpendTracker.MONTH_TRACKER
+        start_date_param = request.query_params.get("start_date")
+        start_date = parse_datetime(start_date_param) if start_date_param else None
+        if start_date is None and start_date_param:
+            parsed_date = parse_date(start_date_param)
+            if parsed_date is not None:
+                start_date = datetime.combine(parsed_date, datetime.min.time())
+        if start_date is None:
+            start_date = dj_timezone.now() - timedelta(days=365 * 5)
+        elif dj_timezone.is_naive(start_date):
+            start_date = dj_timezone.make_aware(start_date, dj_timezone.get_current_timezone())
+        trackers = SpendTracker.objects.filter(
+            customer=user, tracker_type=tracker_type, starting_date__gte=start_date
+        ).order_by("starting_date")
+        serializer = SpendTrackerSerializer(trackers, many=True)
+        return Response(serializer.data)
 
 
 class ReceiptView(APIView):

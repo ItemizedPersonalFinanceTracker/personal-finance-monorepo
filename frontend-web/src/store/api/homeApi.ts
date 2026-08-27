@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { accountSummaryResponse, Category } from "./classes/home";
+import type { accountSummaryResponse, Category, SpendingTracker } from "./classes/home";
 
 export const homeApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
@@ -30,8 +30,12 @@ export const homeApi = baseApi.injectEndpoints({
                 }
             },
         }),
+        getSpendingTrackers: build.query<SpendingTracker[], { tracker_type: string, start_date: string }>({
+            query: ({ tracker_type, start_date }) => ({ url: `/users/spending_trackers?tracker_type=${tracker_type}&start_date=${start_date}`, method: "GET" }),
+            providesTags: ["Summary"],
+        }),
     }),
     overrideExisting: false,
 });
 
-export const { useGetSummaryQuery, useGetCategoriesQuery, useCreateCategoryMutation } = homeApi;
+export const { useGetSummaryQuery, useGetCategoriesQuery, useCreateCategoryMutation, useGetSpendingTrackersQuery } = homeApi;

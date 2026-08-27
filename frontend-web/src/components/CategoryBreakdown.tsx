@@ -37,38 +37,35 @@ export default function CategoryBreakdown() {
     
     if (isLoading) {
         return (
-        <div className="w-full min-w-0">
-            <h1 className="text-2xl font-bold">Category Breakdown</h1>
+        <div className="flex w-full min-w-0 flex-col items-center">
+            <h1 className="text-2xl font-bold text-center">Category Breakdown</h1>
             <Loader color="blue" />
         </div>
         )
     }
     
     return (
-        <div className="w-full min-w-0">
-            <h1 className="text-2xl font-bold">Category Breakdown</h1>
-            <div className="flex w-full min-w-0 flex-col gap-2 md:flex-row">
+        <div className="flex w-full min-w-0 flex-col items-center">
+            <h1 className="text-2xl font-bold text-center">Category Breakdown</h1>
+            <div className="flex w-full min-w-0 flex-col items-center gap-2 md:flex-row md:justify-center">
+                <div className="order-1 flex w-full min-w-0 justify-center md:order-2 md:w-auto">
+                    <Select
+                        w={140}
+                        data={timeFrames}
+                        value={timeFrame}
+                        onChange={(value) => setTimeFrame(value as string)}
+                    />
+                </div>
                 {Object.keys(get_classification_data()).length > 0 ? (
-                    <div id="pie-chart" className="min-w-0 flex-1 basis-0">
-                        <p>Pie Chart</p>
+                    <div id="pie-chart" className="order-2 mx-auto min-w-0 w-full max-w-md max-h-156 md:order-1">
+                        <p className="text-center">Pie Chart</p>
                         <Pie data={get_pie_data()}></Pie>
                     </div>
                 ) : (
-                    <div className="min-w-0 flex-1 basis-0">
+                    <div className="order-2 min-w-0 w-full text-center md:order-1">
                         <p>No data available</p>
                     </div>
                 )}
-                <div className="flex min-w-0 flex-1 basis-0 flex-col gap-2">
-                    <div className="min-w-0 w-full">
-                        <Select
-                            w="25%"
-                            data={timeFrames}
-                            value={timeFrame}
-                            onChange={(value) => setTimeFrame(value as string)}
-                        />
-                    </div>
-                    <div></div>
-                </div>
             </div>
         </div>
     );

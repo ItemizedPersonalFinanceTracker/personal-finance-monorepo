@@ -34,7 +34,8 @@ urlpatterns = [
     path("receipts/bulk", views.ReceiptBulkView.as_view()),
     path("categories", views.CategoryView.as_view()),
     path("categories/<int:pk>", views.CategoryView.as_view()),
-
+    path("spending_trackers", views.SpendingTrackerView.as_view()),
+    
     path('register', views.RegisterView.as_view()),
     path('login', TokenObtainPairView.as_view()),
     path('logout', views.LogoutView.as_view()),
