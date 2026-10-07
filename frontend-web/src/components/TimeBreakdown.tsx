@@ -12,7 +12,7 @@ import {
 } from "chart.js";
 import { Loader, Select, TextInput } from "@mantine/core";
 import { useGetSpendingTrackersQuery } from "../store/api/homeApi";
-import { categoryLabel } from "../utility_functions/util";
+import { categoryLabel, formatUtcDate } from "../utility_functions/util";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -43,14 +43,13 @@ const options = {
 };
 
 function formatPeriodLabel(isoDate: string, trackerType: string): string {
-    const date = new Date(isoDate);
     if (trackerType === "year") {
-        return date.toLocaleDateString(undefined, { year: "numeric" });
+        return formatUtcDate(isoDate, { year: "numeric" });
     }
     if (trackerType === "month") {
-        return date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+        return formatUtcDate(isoDate, { month: "short", year: "numeric" });
     }
-    return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    return formatUtcDate(isoDate, { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function TimeBreakdown() {

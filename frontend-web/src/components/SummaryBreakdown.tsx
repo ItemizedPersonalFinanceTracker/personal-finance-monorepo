@@ -1,6 +1,7 @@
 import { Loader, Paper, Stack, Text, Title } from "@mantine/core"
 import { useGetSummaryQuery } from "../store/api/homeApi"
 import type { accountSummaryResponse } from "../store/api/classes/home"
+import { formatUtcDate } from "../utility_functions/util"
 
 const TIMEFRAMES: { key: keyof accountSummaryResponse; label: string }[] = [
     { key: "week", label: "This week" },
@@ -39,7 +40,7 @@ export default function SummaryBreakdown() {
                     const payload = data[key]
                     const spent = Number(payload.total_spend)
                     const periodStart = payload.starting_date
-                        ? new Date(payload.starting_date).toLocaleDateString(undefined, {
+                        ? formatUtcDate(payload.starting_date, {
                               month: "short",
                               day: "numeric",
                               year: "numeric",

@@ -32,6 +32,14 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
 }
 
 
+export function formatUtcDate(isoDate: string, options: Intl.DateTimeFormatOptions): string {
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) {
+        return isoDate;
+    }
+    return date.toLocaleDateString(undefined, { ...options, timeZone: "UTC" });
+}
+
 export function todayDateValue(): string {
     const today = new Date();
     const year = today.getFullYear();
