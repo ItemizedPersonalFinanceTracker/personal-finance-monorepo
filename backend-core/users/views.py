@@ -12,9 +12,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 from users.util import (
+    backfill_empty_spend_trackers,
     extract_receipt_data,
     get_or_create_spend_tracker,
-    handle_summary_clear,
     remove_receipt_from_trackers,
 )
 from users.serializers import (
@@ -47,10 +47,7 @@ class AccountSummaryView(APIView):
 
     def get(self, request:Request, format=None):
         user = request.user
-        # Ensure current period trackers exist
-        handle_summary_clear(user)
-        
-        # Get current period trackers
+        backfill_empty_spend_trackers(user)
         now = datetime.now()
         week_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.WEEK_TRACKER, now)
         month_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.MONTH_TRACKER, now)
@@ -66,6 +63,7 @@ class AccountSummaryView(APIView):
 class SpendingTrackerView(APIView):
     def get(self, request, format=None):
         user = request.user
+        backfill_empty_spend_trackers(user)
         tracker_type = request.query_params.get("tracker_type")
         if tracker_type not in [SpendTracker.WEEK_TRACKER, SpendTracker.MONTH_TRACKER, SpendTracker.YEAR_TRACKER]:
             tracker_type = SpendTracker.MONTH_TRACKER

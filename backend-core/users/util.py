@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django import utils
 from django.db import transaction
+from django.db.models import Max
 
 from users.models import Category, Customer, Receipt, SpendTracker
 
@@ -80,22 +81,57 @@ def get_or_create_spend_tracker(customer: Customer, tracker_type: str, reference
     )
     return tracker, created
 
-def handle_summary_clear(user:Customer):
+def _next_period_start(tracker_type: str, starting_date):
+    if tracker_type == SpendTracker.WEEK_TRACKER:
+        return get_starting_date_for_period(tracker_type, starting_date + timedelta(weeks=1))
+    if tracker_type == SpendTracker.MONTH_TRACKER:
+        year = starting_date.year + (starting_date.month == 12)
+        month = 1 if starting_date.month == 12 else starting_date.month + 1
+        return get_starting_date_for_period(
+            tracker_type, starting_date.replace(year=year, month=month, day=1)
+        )
+    if tracker_type == SpendTracker.YEAR_TRACKER:
+        return get_starting_date_for_period(
+            tracker_type, starting_date.replace(year=starting_date.year + 1, month=1, day=1)
+        )
+    raise ValueError(f"Invalid tracker_type: {tracker_type}")
+
+def backfill_empty_spend_trackers(customer: Customer | None = None):
     """
-    Ensure SpendTracker instances exist for current periods (week/month/year).
-    Creates new trackers if we've moved to a new period.
+    For each tracker type, find the latest SpendTracker and create an empty one
+    for every period after it through the current period.
     """
     now = utils.timezone.now()
-    
-    # Get or create trackers for current periods
-    current_week_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.WEEK_TRACKER, now)
-    current_month_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.MONTH_TRACKER, now)
-    current_year_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.YEAR_TRACKER, now)
-    
-    # Check if we need to create new trackers for new periods
-    # This will automatically create new ones if they don't exist for the current period
-    # The get_or_create handles this, so we don't need to manually check dates
+    trackers = SpendTracker.objects.all()
+    if customer is not None:
+        trackers = trackers.filter(customer=customer)
 
+    latest_by_type = trackers.values("customer_id", "tracker_type").annotate(
+        latest_start=Max("starting_date")
+    )
+
+    to_create = []
+    for row in latest_by_type:
+        tracker_type = row["tracker_type"]
+        current_start = get_starting_date_for_period(tracker_type, now)
+        period_start = _next_period_start(tracker_type, row["latest_start"])
+        while period_start <= current_start:
+            to_create.append(
+                SpendTracker(
+                    customer_id=row["customer_id"],
+                    tracker_type=tracker_type,
+                    starting_date=period_start,
+                    total_spend=0,
+                    classification_data={},
+                    last_updated=now,
+                )
+            )
+            period_start = _next_period_start(tracker_type, period_start)
+
+    if not to_create:
+        return []
+    # Another request may insert the same periods first. The unique key makes those no-ops.
+    return SpendTracker.objects.bulk_create(to_create, ignore_conflicts=True)
 
 def get_affected_trackers_for_receipt(receipt: Receipt):
     """
