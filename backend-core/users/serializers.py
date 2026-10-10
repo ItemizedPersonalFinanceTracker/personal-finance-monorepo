@@ -44,11 +44,12 @@ class CategorySerializer(serializers.ModelSerializer):
         return value.strip().lower()
 
 
-class ManualReceiptSerializer(serializers.Serializer):
+class ReceiptSerializer(serializers.Serializer):
     total = serializers.DecimalField(max_digits=19, decimal_places=2)
     storeName = serializers.CharField()
     dateBought = serializers.DateTimeField(required=False, allow_null=True, default=None)
     category_name = serializers.CharField(required=False, allow_null=True, default=None)
+    image = serializers.ImageField(required=False, allow_null=True, default=None)
 
 
 class ImageReceiptSerializer(serializers.Serializer):
@@ -58,17 +59,8 @@ class ImageReceiptSerializer(serializers.Serializer):
     dateBought = serializers.DateTimeField(required=False, allow_null=True, default=None)
     category_name = serializers.CharField(required=False, allow_null=True, default=None)
 
-
-class ReceiptSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Receipt
-        fields = [
-            "receipt_id", "total_spend", "image", "date_bought", "store_name", "category"
-        ]
-        depth = 1
-
 class ReceiptBulkSerializer(serializers.Serializer):
-    receipts = ManualReceiptSerializer(many=True, allow_empty=False)
+    receipts = ReceiptSerializer(many=True, allow_empty=False)
 
     def validate_receipts(self, value):
         for receipt in value:

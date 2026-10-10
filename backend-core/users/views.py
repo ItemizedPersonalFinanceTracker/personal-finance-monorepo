@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
+from users.services.gemini_provider import GeminiProvider
 from users.util import (
     backfill_empty_spend_trackers,
     extract_receipt_data,
@@ -20,7 +21,7 @@ from users.util import (
 from users.serializers import (
     CategorySerializer,
     ImageReceiptSerializer,
-    ManualReceiptSerializer,
+    ReceiptSerializer,
     ReceiptBulkSerializer,
     ReceiptDetailSerializer,
     ReceiptListSerializer,
@@ -97,7 +98,7 @@ class ReceiptView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, format=None):
-        ser = ManualReceiptSerializer(data=request.data)
+        ser = ReceiptSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
 
@@ -105,6 +106,7 @@ class ReceiptView(APIView):
             user=request.user,
             total=data["total"],
             store_name=data["storeName"],
+            image=data["image"],
             date_bought=data["dateBought"],
             category_name=data["category_name"],
         )
@@ -128,7 +130,7 @@ class ReceiptDetailView(APIView):
         except Receipt.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ManualReceiptSerializer(data=request.data, partial=True)
+        serializer = ReceiptSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
@@ -163,6 +165,13 @@ class ReceiptScanView(APIView):
         data = ser.validated_data
 
         image_file = data["receiptImage"]
+        category_choices = list(
+            Category.objects.filter(customer=request.user).values_list("category_name", flat=True)
+        )
+        result = GeminiProvider().receipt_process(image_file, category_choices)
+        print(result)
+        image_file.seek(0)
+
         extracted = extract_receipt_data(image_file)
 
         total = data["total"] if data["total"] is not None else extracted.get("total")

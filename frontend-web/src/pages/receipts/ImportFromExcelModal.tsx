@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useGetCategoriesQuery } from "../../store/api/homeApi";
 import { apiErrorMessage, categoryLabel, OTHER_CATEGORY, toDateBought } from "../../utility_functions/util";
 import { useCreateReceiptBulkMutation } from "../../store/api/receiptApi";
-import type { CreateManualReceiptRequest } from "../../store/api/classes/receipt";
+import type { CreateReceiptRequest } from "../../store/api/classes/receipt";
 import { notifications } from "@mantine/notifications";
 
 type ImportRow = {
@@ -149,7 +149,7 @@ export default function ImportFromExcelModal({ open, onClose }: { open: boolean;
             return;
         }
 
-        const receipts: CreateManualReceiptRequest[] = [];
+        const receipts: CreateReceiptRequest[] = [];
         for (const row of processedValues) {
             const trimmedStoreName = row.storeName.trim();
             const parsedAmount = typeof row.amount === "number" ? row.amount : Number(row.amount);

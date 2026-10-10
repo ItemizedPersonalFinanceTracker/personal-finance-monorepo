@@ -15,10 +15,7 @@ import {
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { notifications } from "@mantine/notifications";
 import { useGetCategoriesQuery } from "../../store/api/homeApi";
-import {
-    useCreateImageReceiptMutation,
-    useCreateManualReceiptMutation,
-} from "../../store/api/receiptApi";
+import { useCreateManualReceiptMutation } from "../../store/api/receiptApi";
 import AddCategoryButton from "./AddCategoryButton";
 import ReceiptCameraModal from "./ReceiptCameraModal";
 import { apiErrorMessage, categoryLabel, OTHER_CATEGORY, toDateBought, todayDateValue } from "../../utility_functions/util";
@@ -35,9 +32,7 @@ import { apiErrorMessage, categoryLabel, OTHER_CATEGORY, toDateBought, todayDate
 
 export default function AddBill() {
     const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
-    const [createManualReceipt, { isLoading: isManualLoading }] = useCreateManualReceiptMutation();
-    const [createImageReceipt, { isLoading: isImageLoading }] = useCreateImageReceiptMutation();
-    const isLoading = isManualLoading || isImageLoading;
+    const [createManualReceipt, { isLoading }] = useCreateManualReceiptMutation();
 
     const [storeName, setStoreName] = useState("");
     const [category, setCategory] = useState<string | null>(OTHER_CATEGORY);
@@ -100,22 +95,13 @@ export default function AddBill() {
         const dateBought = toDateBought(date);
 
         try {
-            if (image) {
-                await createImageReceipt({
-                    receiptImage: image,
-                    total: parsedAmount,
-                    storeName: trimmedStoreName,
-                    dateBought,
-                    category_name: cleanedCategory,
-                }).unwrap();
-            } else {
-                await createManualReceipt({
-                    total: parsedAmount,
-                    storeName: trimmedStoreName,
-                    dateBought,
-                    category_name: cleanedCategory,
-                }).unwrap();
-            }
+            await createManualReceipt({
+                total: parsedAmount,
+                storeName: trimmedStoreName,
+                dateBought,
+                category_name: cleanedCategory,
+                image,
+            }).unwrap();
 
             notifications.show({
                 title: "Success",
@@ -132,7 +118,6 @@ export default function AddBill() {
         date,
         category,
         image,
-        createImageReceipt,
         createManualReceipt,
         resetForm,
     ]);

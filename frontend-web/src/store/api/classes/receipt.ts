@@ -1,8 +1,9 @@
-export interface CreateManualReceiptRequest {
+export interface CreateReceiptRequest {
     total: number;
     storeName: string;
     dateBought?: string | null;
     category_name?: string | null;
+    image?: File | null;
 }
 
 export interface UpdateManualReceiptRequest {
@@ -13,20 +14,12 @@ export interface UpdateManualReceiptRequest {
     category_name?: string | null;
 }
 
-export interface CreateImageReceiptRequest {
-    receiptImage: File;
-    total?: number | null;
-    storeName?: string | null;
-    dateBought?: string | null;
-    category_name?: string | null;
-}
-
 export interface CreateReceiptResponse {
     receipt_id: number;
 }
 
 export interface CreateReceiptBulkRequest {
-    receipts: CreateManualReceiptRequest[];
+    receipts: CreateReceiptRequest[];
 }
 
 export interface CreateReceiptBulkResponse {
