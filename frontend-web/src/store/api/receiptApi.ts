@@ -5,6 +5,7 @@ import type {
     CreateReceiptBulkResponse,
     CreateReceiptResponse,
     GetReceiptsResponse,
+    ScanReceiptResponse,
     UpdateManualReceiptRequest,
 } from "./classes/receipt";
 
@@ -66,6 +67,18 @@ export const receiptApi = baseApi.injectEndpoints({
             }),
             providesTags: ["Receipts"],
         }),
+        scanReceipt: build.mutation<ScanReceiptResponse, File>({
+            query: (image) => {
+                const body = new FormData();
+                body.append("receiptImage", image);
+                return {
+                    url: "/users/receipts/scan",
+                    method: "POST" as const,
+                    body,
+                    timeout: 120000,
+                };
+            },
+        }),
         createReceiptBulk: build.mutation<CreateReceiptBulkResponse, CreateReceiptBulkRequest>({
             query: (body) => ({
                 url: "/users/receipts/bulk",
@@ -84,4 +97,5 @@ export const {
     useGetReceiptsInfiniteQuery,
     useDeleteReceiptMutation,
     useCreateReceiptBulkMutation,
+    useScanReceiptMutation,
 } = receiptApi;

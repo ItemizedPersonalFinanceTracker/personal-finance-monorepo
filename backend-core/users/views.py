@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils import timezone as dj_timezone
@@ -11,7 +12,6 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from users.services.gemini_provider import GeminiProvider
 from users.util import (
     backfill_empty_spend_trackers,
     extract_receipt_data,
@@ -30,6 +30,7 @@ from users.serializers import (
 )
 from users.models import Category, Receipt, SpendTracker
 from users.services.receipt_utilities import _apply_receipt_filters, _bulk_create_receipts, _create_receipt, _update_receipt
+from financeproject.app_settings import APP_SETTINGS
 
 
 class ReceiptListPagination(PageNumberPagination):
@@ -100,7 +101,7 @@ class ReceiptView(APIView):
     def post(self, request, format=None):
         ser = ReceiptSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        data = ser.validated_data
+        data = ser.validated_data            
 
         receipt = _create_receipt(
             user=request.user,
@@ -162,36 +163,21 @@ class ReceiptScanView(APIView):
     def post(self, request, format=None):
         ser = ImageReceiptSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        data = ser.validated_data
-
-        image_file = data["receiptImage"]
-        category_choices = list(
-            Category.objects.filter(customer=request.user).values_list("category_name", flat=True)
-        )
-        result = GeminiProvider().receipt_process(image_file, category_choices)
-        print(result)
-        image_file.seek(0)
-
-        extracted = extract_receipt_data(image_file)
-
-        total = data["total"] if data["total"] is not None else extracted.get("total")
-        store_name = data["storeName"] if data["storeName"] is not None else extracted.get("storeName")
-
-        if total is None or store_name is None:
-            return Response(
-                {"error": "Could not extract store name and total from the image. Please provide them manually."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        receipt = _create_receipt(
-            user=request.user,
-            total=total,
-            store_name=store_name,
-            image=image_file,
-            date_bought=data["dateBought"],
-            category_name=data["category_name"],
-        )
-        return Response({"receipt_id": receipt.receipt_id}, status=status.HTTP_201_CREATED)
+        image_file = ser.validated_data["receiptImage"]
+        if APP_SETTINGS.USE_IMAGE_PROCESSING:
+            try:
+                category_choices = list(
+                    Category.objects.filter(customer=request.user).values_list("category_name", flat=True)
+                )
+                print(time.time())
+                result = extract_receipt_data(image_file, category_choices)
+                print(time.time())
+                print(result)
+                return Response(result)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "Image processing is not enabled."}, status=status.HTTP_400_BAD_REQUEST)
 
 class ReceiptBulkView(APIView):
     def post(self, request, format=None):

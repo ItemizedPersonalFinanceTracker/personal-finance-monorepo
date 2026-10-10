@@ -40,3 +40,17 @@ export interface GetReceiptsResponse {
     previous: string | null;
     results: Receipt[];
 }
+
+export interface ScannedReceiptItem {
+    name: string;
+    price: number;
+    category: string;
+}
+
+export interface ScanReceiptResponse {
+    title: string;
+    date: string;
+    total: number;
+    category: string;
+    items: ScannedReceiptItem[];
+}

@@ -1,6 +1,7 @@
 from django.core.files.uploadedfile import UploadedFile
 from google import genai
 
+from financeproject.app_settings import APP_SETTINGS
 from users.datamodels import ReceiptProcessModel
 
 # client = genai.Client()
@@ -82,7 +83,9 @@ from users.datamodels import ReceiptProcessModel
 
 class GeminiProvider:
     def __init__(self):
-        self.client = genai.Client()
+        if not APP_SETTINGS.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY is not set")
+        self.client = genai.Client(api_key=APP_SETTINGS.GEMINI_API_KEY)
     
     def receipt_process(self, receipt_image: UploadedFile, category_choices: list[str]) -> ReceiptProcessModel:
         mime_type = getattr(receipt_image, "content_type", None) or "image/jpeg"

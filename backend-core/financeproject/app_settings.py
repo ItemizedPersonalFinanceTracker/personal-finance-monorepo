@@ -37,5 +37,9 @@ class AppSettings(BaseSettings):
     S3_REGION_NAME: str | None = None
     S3_ENDPOINT_URL: str | None = None
 
+    USE_IMAGE_PROCESSING: bool = False
+    USE_GEMINI: bool = False
+    GEMINI_API_KEY: str | None = None
+
 
 APP_SETTINGS = AppSettings()

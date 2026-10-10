@@ -6,17 +6,24 @@ from django import utils
 from django.db import transaction
 from django.db.models import Max
 
+from financeproject.app_settings import APP_SETTINGS
 from users.models import Category, Customer, Receipt, SpendTracker
+from users.services.gemini_provider import GeminiProvider
 
-def extract_receipt_data(image_file):
+
+def _extract_with_gemini(image_file, category_choices: list[str]) -> dict:
+    result = GeminiProvider().receipt_process(image_file, category_choices)
+    return result.model_dump(mode="json")
+
+
+def extract_receipt_data(image_file, category_choices: list[str]) -> dict:
     """
-    Placeholder for receipt image processing.
-    TODO: Integrate OCR / ML model to extract store name and total from receipt images.
+    Extract receipt fields from an image.
+    Add another extractor here when swapping providers.
     """
-    return {
-        "storeName": None,
-        "total": None,
-    }
+    if APP_SETTINGS.USE_GEMINI:
+        return _extract_with_gemini(image_file, category_choices)
+    raise ValueError("No receipt extraction method is configured.")
 
 
 def find_or_create_category(category_name:str, user:Customer):

@@ -54,10 +54,6 @@ class ReceiptSerializer(serializers.Serializer):
 
 class ImageReceiptSerializer(serializers.Serializer):
     receiptImage = serializers.ImageField()
-    total = serializers.DecimalField(max_digits=19, decimal_places=2, required=False, allow_null=True, default=None)
-    storeName = serializers.CharField(required=False, allow_null=True, default=None)
-    dateBought = serializers.DateTimeField(required=False, allow_null=True, default=None)
-    category_name = serializers.CharField(required=False, allow_null=True, default=None)
 
 class ReceiptBulkSerializer(serializers.Serializer):
     receipts = ReceiptSerializer(many=True, allow_empty=False)
