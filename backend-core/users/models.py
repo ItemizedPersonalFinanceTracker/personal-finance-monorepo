@@ -103,7 +103,7 @@ class SpendTracker(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     classification_data = models.JSONField(default=dict)
-    
+
     # Many-to-Many relationship with Receipts
     # A receipt can belong to multiple trackers (week, month, year)
     receipts = models.ManyToManyField(Receipt, related_name="spend_trackers", blank=True)
@@ -131,3 +131,22 @@ class SpendTracker(models.Model):
                 self.classification_data[category_name] = current_value + float(receipt.total_spend)
         
         self.save()
+
+
+class UserConfigChoices(models.TextChoices):
+    SHOW_IMAGE_PROCESSING_POPUP = "SHOW_IMAGE_PROCESSING_POPUP", "Show image processing popup"
+
+class UserConfig(models.Model):
+    
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="configs")
+    config = models.CharField(max_length=64, choices=UserConfigChoices.choices)
+    value = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["customer", "config"],
+                name="unique_customer_config",
+            )
+        ]

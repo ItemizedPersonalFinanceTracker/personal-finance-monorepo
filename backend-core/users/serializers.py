@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from users.models import Category, Customer, Item, Receipt, SpendTracker
+from users.models import Category, Customer, Item, Receipt, SpendTracker, UserConfig
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -42,6 +42,12 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def validate_category_name(self, value):
         return value.strip().lower()
+
+
+class UserConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserConfig
+        fields = ["config", "value"]
 
 
 class ReceiptSerializer(serializers.Serializer):

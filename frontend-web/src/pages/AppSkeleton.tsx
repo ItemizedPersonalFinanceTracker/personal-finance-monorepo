@@ -2,9 +2,14 @@ import { Box, Burger, Group, Paper, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Outlet } from "react-router-dom";
 import NavDrawer from "../components/NavDrawer";
+import { useGetUserConfigsQuery } from "../store/api/configApi";
+import { useAppSelector } from "../store/hooks";
+import { selectAuthToken } from "../store/slices/authSlice";
 
 export default function AppSkeleton() {
     const [opened, { toggle, close }] = useDisclosure(false);
+    const token = useAppSelector(selectAuthToken);
+    useGetUserConfigsQuery(undefined, { skip: !token });
 
     return (
         <div>

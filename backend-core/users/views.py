@@ -27,8 +27,9 @@ from users.serializers import (
     ReceiptListSerializer,
     RegisterSerializer,
     SpendTrackerSerializer,
+    UserConfigSerializer,
 )
-from users.models import Category, Receipt, SpendTracker
+from users.models import Category, Receipt, SpendTracker, UserConfig, UserConfigChoices
 from users.services.receipt_utilities import _apply_receipt_filters, _bulk_create_receipts, _create_receipt, _update_receipt
 from financeproject.app_settings import APP_SETTINGS
 
@@ -228,6 +229,33 @@ class LogoutView(APIView):
             )
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
+
+
+class UserConfigView(APIView):
+    def get(self, request, format=None):
+        configs = {
+            row.config: row
+            for row in UserConfig.objects.filter(customer=request.user)
+        }
+        for choice in UserConfigChoices.values:
+            if choice not in configs:
+                configs[choice] = UserConfig.objects.create(
+                    customer=request.user,
+                    config=choice,
+                    value=False,
+                )
+        ordered = [configs[choice] for choice in UserConfigChoices.values]
+        return Response(UserConfigSerializer(ordered, many=True).data)
+
+    def put(self, request, format=None):
+        serializer = UserConfigSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        config, _created = UserConfig.objects.update_or_create(
+            customer=request.user,
+            config=serializer.validated_data["config"],
+            defaults={"value": serializer.validated_data["value"]},
+        )
+        return Response(UserConfigSerializer(config).data)
 
 
 class CategoryView(APIView):
