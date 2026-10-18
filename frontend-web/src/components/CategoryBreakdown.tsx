@@ -35,38 +35,35 @@ export default function CategoryBreakdown() {
     }, [get_classification_data]);
     
     
-    if (isLoading) {
-        return (
-        <div className="flex w-full min-w-0 flex-col items-center">
-            <h1 className="text-2xl font-bold text-center">Category Breakdown</h1>
-            <Loader color="blue" />
-        </div>
-        )
-    }
-    
+    const classData = get_classification_data();
+
     return (
         <div className="flex w-full min-w-0 flex-col items-center">
-            <h1 className="text-2xl font-bold text-center">Category Breakdown</h1>
-            <div className="flex w-full min-w-0 flex-col items-center gap-2 md:flex-row md:justify-center">
-                <div className="order-1 flex w-full min-w-0 justify-center md:order-2 md:w-auto">
-                    <Select
-                        w={140}
-                        data={timeFrames}
-                        value={timeFrame}
-                        onChange={(value) => setTimeFrame(value as string)}
-                    />
-                </div>
-                {Object.keys(get_classification_data()).length > 0 ? (
-                    <div id="pie-chart" className="order-2 mx-auto min-w-0 w-full max-w-md max-h-156 md:order-1">
-                        <p className="text-center">Pie Chart</p>
-                        <Pie data={get_pie_data()}></Pie>
-                    </div>
-                ) : (
-                    <div className="order-2 min-w-0 w-full text-center md:order-1">
-                        <p>No data available</p>
-                    </div>
-                )}
+            <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center">
+                <div />
+                <h1 className="whitespace-nowrap px-6 text-center text-lg font-bold sm:text-2xl">Category Breakdown</h1>
+                <Select
+                    className="w-[6.5rem] max-w-full justify-self-start sm:w-36"
+                    size="sm"
+                    data={timeFrames}
+                    value={timeFrame}
+                    onChange={(value) => {
+                        if (value) setTimeFrame(value);
+                    }}
+                />
             </div>
+            {isLoading ? (
+                <Loader color="blue" />
+            ) : Object.keys(classData).length > 0 ? (
+                <div id="pie-chart" className="mx-auto min-w-0 w-full max-w-md max-h-156">
+                    <p className="text-center">Pie Chart</p>
+                    <Pie data={get_pie_data()}></Pie>
+                </div>
+            ) : (
+                <div className="min-w-0 w-full text-center">
+                    <p>No data available</p>
+                </div>
+            )}
         </div>
     );
 }
