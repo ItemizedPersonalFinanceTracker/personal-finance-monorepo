@@ -29,6 +29,11 @@ export default function NavDrawer({ opened, onClose }: NavDrawerProps) {
         onClose();
     };
 
+    const goProfile = () => {
+        navigate("/home/profile");
+        onClose();
+    };
+
     const handleSignOut = async () => {
         onClose();
         try {
@@ -60,6 +65,9 @@ export default function NavDrawer({ opened, onClose }: NavDrawerProps) {
                 </Button>
                 <Button fullWidth variant="default" onClick={goReceipts}>
                     Receipts
+                </Button>
+                <Button fullWidth variant="default" onClick={goProfile}>
+                    Profile
                 </Button>
                 <Button
                     fullWidth

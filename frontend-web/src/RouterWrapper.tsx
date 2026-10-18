@@ -6,6 +6,7 @@ import Home from "./pages/home/Home";
 import AppSkeleton from "./pages/AppSkeleton";
 import AddBill from "./pages/add_bill/AddBill";
 import Receipts from "./pages/receipts/Receipt";
+import Profile from "./pages/profile/Profile";
 
 function ProtectedRoutes({ children }: { children: ReactNode }) {
     useRequireAuth();
@@ -22,6 +23,7 @@ export default function RouterWrapper() {
                         <Route index element={<Home />} />
                         <Route path="add_bill" element={<AddBill />} />
                         <Route path="receipts" element={<Receipts />} />
+                        <Route path="profile" element={<Profile />} />
                     </Route>
                     <Route path="/" element={<Navigate to="/home" replace />} />
                 </Routes>

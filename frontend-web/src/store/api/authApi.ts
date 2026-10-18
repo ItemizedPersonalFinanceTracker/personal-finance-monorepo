@@ -2,6 +2,7 @@ import { baseApi } from "./baseApi";
 import type {
     loginRequest,
     loginResponse,
+    Profile,
     registerRequest,
     registerResponse,
 } from "./classes/auth_objects";
@@ -48,8 +49,12 @@ export const authApi = baseApi.injectEndpoints({
                 body,
             }),
         }),
+        getProfile: build.query<Profile, void>({
+            query: () => ({ url: "/users/profile", method: "GET" }),
+            providesTags: ["Auth"],
+        }),
     }),
     overrideExisting: false,
 });
 
-export const { useLoginMutation, useLogoutMutation, useRegisterMutation } = authApi;
+export const { useLoginMutation, useLogoutMutation, useRegisterMutation, useGetProfileQuery } = authApi;

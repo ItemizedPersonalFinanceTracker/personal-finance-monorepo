@@ -25,6 +25,7 @@ from users.serializers import (
     ReceiptBulkSerializer,
     ReceiptDetailSerializer,
     ReceiptListSerializer,
+    ProfileSerializer,
     RegisterSerializer,
     SpendTrackerSerializer,
     UserConfigSerializer,
@@ -229,6 +230,11 @@ class LogoutView(APIView):
             )
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
+
+
+class ProfileView(APIView):
+    def get(self, request, format=None):
+        return Response(ProfileSerializer(request.user).data)
 
 
 class UserConfigView(APIView):

@@ -1,4 +1,5 @@
 export function categoryLabel(name: string): string {
+    console.log(name)
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 

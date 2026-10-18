@@ -6,7 +6,8 @@ import type { Category } from "../../store/api/classes/home";
 type AddCategoryButtonProps = {
     categories: Category[];
     disabled?: boolean;
-    onCreated: (categoryName: string) => void;
+    onCreated?: (categoryName: string) => void;
+    label?: string;
 };
 
 function categoryErrorMessage(error: unknown): string {
@@ -37,6 +38,7 @@ export default function AddCategoryButton({
     categories,
     disabled = false,
     onCreated,
+    label,
 }: AddCategoryButtonProps) {
     const [createCategory, { isLoading }] = useCreateCategoryMutation();
     const [opened, setOpened] = useState(false);
@@ -59,7 +61,7 @@ export default function AddCategoryButton({
         const normalized = trimmed.toLowerCase();
         const existing = categories.find((c) => c.category_name === normalized);
         if (existing) {
-            onCreated(existing.category_name);
+            onCreated?.(existing.category_name);
             close();
             return;
         }
@@ -67,7 +69,7 @@ export default function AddCategoryButton({
         setError(null);
         try {
             const created = await createCategory({ category_name: trimmed }).unwrap();
-            onCreated(created.category_name);
+            onCreated?.(created.category_name);
             close();
         } catch (err) {
             setError(categoryErrorMessage(err));
@@ -76,23 +78,35 @@ export default function AddCategoryButton({
 
     return (
         <>
-            <ActionIcon
-                type="button"
-                variant="default"
-                size="input-sm"
-                aria-label="Add category"
-                disabled={disabled || isLoading}
-                onClick={() => setOpened(true)}
-            >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path
-                        d="M8 3.5v9M3.5 8h9"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                    />
-                </svg>
-            </ActionIcon>
+            {label ? (
+                <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    disabled={disabled || isLoading}
+                    onClick={() => setOpened(true)}
+                >
+                    {label}
+                </Button>
+            ) : (
+                <ActionIcon
+                    type="button"
+                    variant="default"
+                    size="input-sm"
+                    aria-label="Add category"
+                    disabled={disabled || isLoading}
+                    onClick={() => setOpened(true)}
+                >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path
+                            d="M8 3.5v9M3.5 8h9"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                </ActionIcon>
+            )}
             <Modal opened={opened} onClose={close} title="Add category" centered>
                 <form
                     onSubmit={(e) => {

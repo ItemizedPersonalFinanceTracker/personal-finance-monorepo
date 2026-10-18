@@ -44,6 +44,12 @@ class CategorySerializer(serializers.ModelSerializer):
         return value.strip().lower()
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ("name", "created_at")
+
+
 class UserConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserConfig

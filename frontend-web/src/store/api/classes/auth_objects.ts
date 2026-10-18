@@ -23,3 +23,8 @@ export interface registerResponse {
     id: number
     email: string
 }
+
+export interface Profile {
+    name: string
+    created_at: string
+}

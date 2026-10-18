@@ -9,3 +9,8 @@ export interface UserConfig {
     config: UserConfigKey;
     value: boolean;
 }
+
+export const userConfigLabel: Record<UserConfigKey, string> = {
+    [UserConfigKey.BypassImageProcessingPopup]: "Show popup on receipt upload for image processing",
+    [UserConfigKey.AllowImageProcessing]: "Allow image processing",
+};

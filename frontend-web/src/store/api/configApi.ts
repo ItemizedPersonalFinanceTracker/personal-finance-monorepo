@@ -10,6 +10,21 @@ export const configApi = baseApi.injectEndpoints({
         updateUserConfig: build.mutation<UserConfig, UserConfig>({
             query: (body) => ({ url: "/users/configs", method: "PUT", body }),
             invalidatesTags: ["UserConfigs"],
+            async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+                const patch = dispatch(
+                    configApi.util.updateQueryData("getUserConfigs", undefined, (draft) => {
+                        const row = draft.find((item) => item.config === arg.config);
+                        if (row) {
+                            row.value = arg.value;
+                        }
+                    }),
+                );
+                try {
+                    await queryFulfilled;
+                } catch {
+                    patch.undo();
+                }
+            },
         }),
     }),
     overrideExisting: false,
