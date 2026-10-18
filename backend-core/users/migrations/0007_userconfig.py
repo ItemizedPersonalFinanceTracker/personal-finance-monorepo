@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='UserConfig',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('config', models.CharField(choices=[('SHOW_IMAGE_PROCESSING_POPUP', 'Show image processing popup')], max_length=64)),
+                ('config', models.CharField(choices=[('BYPASS_IMAGE_PROCESSING_POPUP', 'Bypass image processing popup')], max_length=64)),
                 ('value', models.BooleanField(default=False)),
                 ('customer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='configs', to=settings.AUTH_USER_MODEL)),
             ],

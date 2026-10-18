@@ -134,7 +134,8 @@ class SpendTracker(models.Model):
 
 
 class UserConfigChoices(models.TextChoices):
-    SHOW_IMAGE_PROCESSING_POPUP = "SHOW_IMAGE_PROCESSING_POPUP", "Show image processing popup"
+    BYPASS_IMAGE_PROCESSING_POPUP = "BYPASS_IMAGE_PROCESSING_POPUP", "Show popup for image processing"
+    ALLOW_IMAGE_PROCESSING = "ALLOW_IMAGE_PROCESSING", "Allow image processing"
 
 class UserConfig(models.Model):
     

@@ -1,5 +1,6 @@
 export const UserConfigKey = {
-    ShowImageProcessingPopup: "SHOW_IMAGE_PROCESSING_POPUP",
+    BypassImageProcessingPopup: "BYPASS_IMAGE_PROCESSING_POPUP",
+    AllowImageProcessing: "ALLOW_IMAGE_PROCESSING",
 } as const;
 
 export type UserConfigKey = (typeof UserConfigKey)[keyof typeof UserConfigKey];

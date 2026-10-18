@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Alert,
     Button,
+    Checkbox,
     Group,
     Image,
+    Modal,
     NumberInput,
     Paper,
     Select,
@@ -15,6 +17,8 @@ import {
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { notifications } from "@mantine/notifications";
 import { useGetCategoriesQuery } from "../../store/api/homeApi";
+import { useGetUserConfigsQuery, useUpdateUserConfigMutation } from "../../store/api/configApi";
+import { UserConfigKey, type UserConfig } from "../../store/api/classes/config";
 import { useCreateManualReceiptMutation, useScanReceiptMutation } from "../../store/api/receiptApi";
 import type { ScanReceiptResponse } from "../../store/api/classes/receipt";
 import AddCategoryButton from "./AddCategoryButton";
@@ -30,6 +34,10 @@ import { apiErrorMessage, categoryLabel, OTHER_CATEGORY, toDateBought, todayDate
 // }
 
 // export const OTHER_CATEGORY = "__other__";
+
+function isConfigEnabled(configs: UserConfig[] | undefined, key: UserConfigKey): boolean {
+    return configs?.some((row) => row.config === key && row.value) ?? false;
+}
 
 export default function AddBill() {
     const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
@@ -51,17 +59,20 @@ export default function AddBill() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [processPromptOpen, setProcessPromptOpen] = useState(false);
+    const [dontShowAgain, setDontShowAgain] = useState(false);
+    const pendingScanRef = useRef<{ file: File; generation: number } | null>(null);
+    const { data: userConfigs } = useGetUserConfigsQuery();
+    const [updateUserConfig] = useUpdateUserConfigMutation();
 
-    const assignImage = useCallback((file: File | null) => {
-        const generation = ++scanGeneration.current;
-        setPreviewUrl((prev) => {
-            if (prev) {
-                URL.revokeObjectURL(prev);
-            }
-            return file ? URL.createObjectURL(file) : null;
-        });
-        setImage(file);
-        if (!file) {
+    const closeProcessPrompt = useCallback(() => {
+        pendingScanRef.current = null;
+        setProcessPromptOpen(false);
+        setDontShowAgain(false);
+    }, []);
+
+    const startScan = useCallback((file: File, generation: number) => {
+        if (generation !== scanGeneration.current) {
             return;
         }
         setErrorMessage(null);
@@ -87,6 +98,69 @@ export default function AddBill() {
                 setErrorMessage(apiErrorMessage(err, "Could not read the receipt."));
             });
     }, [scanReceipt]);
+
+    const saveProcessPreference = useCallback((allowProcessing: boolean) => {
+        void (async () => {
+            try {
+                await updateUserConfig({
+                    config: UserConfigKey.BypassImageProcessingPopup,
+                    value: true,
+                }).unwrap();
+                await updateUserConfig({
+                    config: UserConfigKey.AllowImageProcessing,
+                    value: allowProcessing,
+                }).unwrap();
+            } catch (err) {
+                setErrorMessage(apiErrorMessage(err, "Could not save that preference."));
+            }
+        })();
+    }, [updateUserConfig]);
+
+    const maybeShowPopupAndStartScan = useCallback((file: File, generation: number) => {
+        const bypass = isConfigEnabled(userConfigs, UserConfigKey.BypassImageProcessingPopup);
+        const allow = isConfigEnabled(userConfigs, UserConfigKey.AllowImageProcessing);
+        if (bypass && allow) {
+            closeProcessPrompt();
+            startScan(file, generation);
+            return;
+        }
+        if (bypass) {
+            closeProcessPrompt();
+            return;
+        }
+        pendingScanRef.current = { file, generation };
+        setDontShowAgain(false);
+        setProcessPromptOpen(true);
+    }, [userConfigs, closeProcessPrompt, startScan]);
+
+    const handleProcessChoice = useCallback((shouldProcess: boolean) => {
+        const pending = pendingScanRef.current;
+        const remember = dontShowAgain;
+        closeProcessPrompt();
+        if (remember) {
+            saveProcessPreference(shouldProcess);
+        }
+        if (shouldProcess && pending && pending.generation === scanGeneration.current) {
+            startScan(pending.file, pending.generation);
+        }
+    }, [dontShowAgain, closeProcessPrompt, saveProcessPreference, startScan]);
+
+    const assignImage = useCallback((file: File | null) => {
+        const generation = ++scanGeneration.current;
+        setPreviewUrl((prev) => {
+            if (prev) {
+                URL.revokeObjectURL(prev);
+            }
+            return file ? URL.createObjectURL(file) : null;
+        });
+        setImage(file);
+        if (!file) {
+            closeProcessPrompt();
+            return;
+        }
+        setErrorMessage(null);
+        maybeShowPopupAndStartScan(file, generation);
+    }, [closeProcessPrompt, maybeShowPopupAndStartScan]);
 
     const categoryOptions = useMemo(
         () => [
@@ -307,6 +381,29 @@ export default function AddBill() {
                 onClose={() => setCameraOpen(false)}
                 onCapture={assignImage}
             />
+            <Modal
+                opened={processPromptOpen}
+                onClose={closeProcessPrompt}
+                title="Process image"
+                centered
+            >
+                <Stack gap="md">
+                    <Text size="sm">Do you want the image to be processed automatically? It may take 1-2 minutes. </Text>
+                    <Checkbox
+                        label="Don't show again"
+                        checked={dontShowAgain}
+                        onChange={(event) => setDontShowAgain(event.currentTarget.checked)}
+                    />
+                    <Group justify="flex-end" gap="xs">
+                        <Button type="button" variant="default" onClick={() => handleProcessChoice(false)}>
+                            No
+                        </Button>
+                        <Button type="button" onClick={() => handleProcessChoice(true)}>
+                            Yes
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
         </div>
     );
 }
