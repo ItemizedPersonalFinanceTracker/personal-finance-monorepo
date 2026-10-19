@@ -26,6 +26,7 @@ function firstDayOfCurrentYear(): string {
 
 const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
         legend: {
             position: "top" as const,
@@ -114,7 +115,7 @@ export default function TimeBreakdown() {
                 {isLoading ? (
                     <Loader color="blue" />
                 ) : chartData.labels.length > 0 ? (
-                    <div className="mx-auto min-w-0 w-full max-w-4xl max-h-156">
+                    <div className="relative mx-auto h-80 w-full min-w-0 max-w-4xl md:h-96">
                         <Line options={options} data={chartData} />
                     </div>
                 ) : (

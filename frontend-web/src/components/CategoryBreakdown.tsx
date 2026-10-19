@@ -39,11 +39,11 @@ export default function CategoryBreakdown() {
 
     return (
         <div className="flex w-full min-w-0 flex-col items-center">
-            <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center">
-                <div />
-                <h1 className="whitespace-nowrap px-6 text-center text-lg font-bold sm:text-2xl">Category Breakdown</h1>
+            <div className="flex w-full min-w-0 flex-col items-center gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-0">
+                <div className="hidden sm:block" />
+                <h1 className="text-center text-lg font-bold sm:whitespace-nowrap sm:px-6 sm:text-2xl">Category Breakdown</h1>
                 <Select
-                    className="w-[6.5rem] max-w-full justify-self-start sm:w-36"
+                    className="w-40 max-w-full sm:w-36 sm:justify-self-start"
                     size="sm"
                     data={timeFrames}
                     value={timeFrame}
