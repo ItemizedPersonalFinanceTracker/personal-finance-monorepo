@@ -82,10 +82,11 @@ from users.datamodels import ReceiptProcessModel
 
 
 class GeminiProvider:
-    def __init__(self):
+    def __init__(self, model: str = "gemini-3.5-flash-lite"):
         if not APP_SETTINGS.GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY is not set")
         self.client = genai.Client(api_key=APP_SETTINGS.GEMINI_API_KEY)
+        self.model = model
     
     def receipt_process(self, receipt_image: UploadedFile, category_choices: list[str]) -> ReceiptProcessModel:
         mime_type = getattr(receipt_image, "content_type", None) or "image/jpeg"
@@ -100,7 +101,7 @@ class GeminiProvider:
         For each item, also categorize the item on what you think it is. Make sure to check the overall category of the receipt, since this may modify it. 
         """
         interaction = self.client.interactions.create(
-            model="gemini-3.8-flash",
+            model=self.model,
             input=[{"type": "text", "text": receipt_process_prompt}, {"type": "image", "uri": uploaded_file.uri, "mime_type": uploaded_file.mime_type or mime_type}],
             response_format={
                 "type": "text",
