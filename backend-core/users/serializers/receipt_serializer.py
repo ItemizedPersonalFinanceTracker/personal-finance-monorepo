@@ -71,12 +71,14 @@ class ReceiptDetailSerializer(serializers.ModelSerializer):
         return obj.category.category_name if obj.category else None
 
     def get_image_url(self, obj):
-        if obj.image:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
-        return None
+        if not obj.image:
+            return None
+        url = obj.image.url
+        if url.startswith(("http://", "https://")):
+            return url
+        if not url.startswith("/"):
+            url = f"/{url}"
+        return url
 
     class Meta:
         model = Receipt

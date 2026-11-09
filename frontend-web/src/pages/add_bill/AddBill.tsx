@@ -22,7 +22,7 @@ import { UserConfigKey, type UserConfig } from "../../store/api/classes/config";
 import { useCreateManualReceiptMutation, useScanReceiptMutation } from "../../store/api/receiptApi";
 import type { ScanReceiptResponse } from "../../store/api/classes/receipt";
 import AddBillItems from "./AddBillItems";
-import { billItemHasContent, createBillItem, type BillItemDraft } from "./billItem";
+import { billItemHasContent, createBillItem, receiptItemsFromDrafts, type BillItemDraft } from "./billItem";
 import AddCategoryButton from "./AddCategoryButton";
 import ReceiptCameraModal from "./ReceiptCameraModal";
 import { apiErrorMessage, categoryLabel, OTHER_CATEGORY, toDateBought, todayDateValue } from "../../utility_functions/util";
@@ -218,6 +218,12 @@ export default function AddBill() {
             return;
         }
 
+        const preparedItems = receiptItemsFromDrafts(items);
+        if ("error" in preparedItems) {
+            setErrorMessage(preparedItems.error);
+            return;
+        }
+
         const dateBought = toDateBought(date);
 
         try {
@@ -227,6 +233,7 @@ export default function AddBill() {
                 dateBought,
                 category_name: cleanedCategory,
                 image,
+                items: preparedItems.items,
             }).unwrap();
 
             notifications.show({
@@ -244,6 +251,7 @@ export default function AddBill() {
         date,
         category,
         image,
+        items,
         createManualReceipt,
         resetForm,
     ]);

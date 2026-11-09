@@ -1,9 +1,16 @@
+export interface ReceiptItemWrite {
+    name: string;
+    price: number;
+    category_name?: string | null;
+}
+
 export interface CreateReceiptRequest {
     total: number;
     storeName: string;
     dateBought?: string | null;
     category_name?: string | null;
     image?: File | null;
+    items?: ReceiptItemWrite[];
 }
 
 export interface UpdateManualReceiptRequest {
@@ -32,6 +39,25 @@ export interface Receipt {
     store_name: string;
     date_bought: string;
     category_id: number | null;
+}
+
+export interface ReceiptItem {
+    id: number;
+    name: string;
+    price: string;
+    category_name: string | null;
+}
+
+export interface ReceiptDetail {
+    receipt_id: number;
+    total_spend: string;
+    image_url: string | null;
+    date_bought: string;
+    store_name: string;
+    category_name: string | null;
+    image_processed: boolean;
+    last_updated: string;
+    items: ReceiptItem[];
 }
 
 export interface GetReceiptsResponse {

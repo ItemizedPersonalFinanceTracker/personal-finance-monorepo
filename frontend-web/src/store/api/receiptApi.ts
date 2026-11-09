@@ -5,6 +5,7 @@ import type {
     CreateReceiptBulkResponse,
     CreateReceiptResponse,
     GetReceiptsResponse,
+    ReceiptDetail,
     ScanReceiptResponse,
     UpdateManualReceiptRequest,
 } from "./classes/receipt";
@@ -14,12 +15,12 @@ const RECEIPT_PAGE_SIZE = 10;
 export const receiptApi = baseApi.injectEndpoints({
     endpoints: (build) => ({
         createManualReceipt: build.mutation<CreateReceiptResponse, CreateReceiptRequest>({
-            query: ({ image, total, storeName, dateBought, category_name }) => {
+            query: ({ image, total, storeName, dateBought, category_name, items }) => {
                 if (!image) {
                     return {
                         url: "/users/receipts",
                         method: "POST" as const,
-                        body: { total, storeName, dateBought, category_name },
+                        body: { total, storeName, dateBought, category_name, items },
                     };
                 }
                 const body = new FormData();
@@ -31,6 +32,9 @@ export const receiptApi = baseApi.injectEndpoints({
                 }
                 if (category_name != null) {
                     body.append("category_name", category_name);
+                }
+                if (items != null) {
+                    body.append("items", JSON.stringify(items));
                 }
                 return {
                     url: "/users/receipts",
@@ -54,6 +58,13 @@ export const receiptApi = baseApi.injectEndpoints({
                 method: "DELETE",
             }),
             invalidatesTags: ["Summary", "Receipts"],
+        }),
+        getReceipt: build.query<ReceiptDetail, number>({
+            query: (receiptId) => ({
+                url: `/users/receipts/${receiptId}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, receiptId) => [{ type: "Receipts", id: receiptId }],
         }),
         getReceipts: build.infiniteQuery<GetReceiptsResponse, void, number>({
             infiniteQueryOptions: {
@@ -94,6 +105,7 @@ export const receiptApi = baseApi.injectEndpoints({
 export const {
     useCreateManualReceiptMutation,
     useUpdateManualReceiptMutation,
+    useGetReceiptQuery,
     useGetReceiptsInfiniteQuery,
     useDeleteReceiptMutation,
     useCreateReceiptBulkMutation,
