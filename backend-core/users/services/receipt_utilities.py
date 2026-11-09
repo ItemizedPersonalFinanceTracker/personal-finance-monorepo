@@ -2,7 +2,8 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from users.models import Category, Item, Receipt
-from users.util import find_or_create_category, update_receipt_in_trackers, update_summary, update_summary_bulk
+from users.managers.category_manager import find_or_create_category
+from users.managers.spend_tracker_manager import update_receipt_in_trackers, update_summary, update_summary_bulk
 
 
 def _category_key(category_name):
