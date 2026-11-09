@@ -63,6 +63,8 @@ def _create_receipt(user, total: Decimal, store_name, image=None, date_bought=No
 
 def _bulk_create_receipts(user, receipts: list[dict]):
     """Bulk create receipts using the same field names as a single manual receipt."""
+    assert all(not receipt.get("items") for receipt in receipts), "Bulk receipt import does not support items."
+
     distinct_names = set()
     for receipt in receipts:
         category_name = _category_key(receipt.get("category_name"))

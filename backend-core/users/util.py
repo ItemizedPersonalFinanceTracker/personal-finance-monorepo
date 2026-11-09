@@ -7,7 +7,14 @@ from django.db import transaction
 from django.db.models import Max
 
 from financeproject.app_settings import APP_SETTINGS
-from users.models import Category, Customer, Receipt, SpendTracker, SpendTrackerCategory
+from users.models import (
+    Category,
+    Customer,
+    Item,
+    Receipt,
+    SpendTracker,
+    SpendTrackerCategory,
+)
 from users.services.gemini_provider import GeminiProvider
 
 
@@ -156,6 +163,47 @@ def get_affected_trackers_for_receipt(receipt: Receipt):
     
     return trackers
 
+def receipt_category_amounts(receipt: Receipt) -> dict[int, Decimal]:
+    """
+    Group item prices by category, excluding the receipt's own category.
+    That category receives the rest of total_spend, including its own items.
+    """
+    grouped: dict[int, Decimal] = defaultdict(Decimal)
+    for item in receipt.items.all():
+        if item.category_id is None:
+            continue
+        grouped[item.category_id] += item.price
+
+    amounts = {
+        category_id: amount
+        for category_id, amount in grouped.items()
+        if category_id != receipt.category_id
+    }
+    other_sum = sum(amounts.values(), Decimal("0"))
+    if receipt.category_id is not None:
+        leftover = receipt.total_spend - other_sum
+        if leftover != 0:
+            amounts[receipt.category_id] = leftover
+    return amounts
+
+def recalculate_from_receipts(tracker: SpendTracker):
+    """Rebuild a tracker's total and category rows from its receipts."""
+    receipts = tracker.receipts.prefetch_related("items")
+    tracker.total_spend = Decimal("0")
+    category_totals = {}
+
+    for receipt in receipts:
+        tracker.total_spend += receipt.total_spend
+        for category_id, amount in receipt_category_amounts(receipt).items():
+            category_totals[category_id] = category_totals.get(category_id, Decimal("0")) + amount
+
+    tracker.save()
+    tracker.category_amounts.all().delete()
+    SpendTrackerCategory.objects.bulk_create([
+        SpendTrackerCategory(tracker=tracker, category_id=category_id, amount=amount)
+        for category_id, amount in category_totals.items()
+    ])
+
 def add_category_amount(tracker: SpendTracker, category_id: int, amount: Decimal):
     """Add amount onto the single category row for this tracker."""
     if not category_id or amount == 0:
@@ -176,13 +224,15 @@ def update_summary(total: Decimal, receipt: Receipt):
     Adds the receipt to the appropriate trackers and updates their totals.
     """
     trackers = get_affected_trackers_for_receipt(receipt)
-    
+    amounts = receipt_category_amounts(receipt)
+
     for tracker in trackers:
         tracker.receipts.add(receipt)
         
         # Update total spend (convert to Decimal for proper arithmetic)
         tracker.total_spend = tracker.total_spend + total
-        add_category_amount(tracker, receipt.category_id, total)
+        for category_id, amount in amounts.items():
+            add_category_amount(tracker, category_id, amount)
         tracker.save()
 
 def update_summary_bulk(receipts: list[Receipt]):
@@ -192,6 +242,10 @@ def update_summary_bulk(receipts: list[Receipt]):
     """
     if not receipts:
         return
+
+    assert not Item.objects.filter(receipt_id__in=[receipt.pk for receipt in receipts]).exists(), (
+        "Bulk receipt import does not support items."
+    )
 
     grouped: dict[tuple, list[Receipt]] = defaultdict(list)
     for receipt in receipts:
@@ -274,7 +328,7 @@ def remove_receipt_from_trackers(receipt: Receipt):
     
     for tracker in affected_trackers:
         tracker.receipts.remove(receipt)
-        tracker.recalculate_from_receipts()
+        recalculate_from_receipts(tracker)
 
 def update_receipt_in_trackers(receipt: Receipt, old_total=None, old_date=None):
     """
@@ -290,20 +344,22 @@ def update_receipt_in_trackers(receipt: Receipt, old_total=None, old_date=None):
         for tracker in old_trackers:
             if receipt in tracker.receipts.all():
                 tracker.receipts.remove(receipt)
-                tracker.recalculate_from_receipts()
+                recalculate_from_receipts(tracker)
         
         # Add to new trackers
         new_trackers = get_affected_trackers_for_receipt(receipt)
+        amounts = receipt_category_amounts(receipt)
         for tracker in new_trackers:
             tracker.receipts.add(receipt)
             tracker.total_spend = Decimal(str(tracker.total_spend)) + Decimal(str(receipt.total_spend))
-            add_category_amount(tracker, receipt.category_id, receipt.total_spend)
+            for category_id, amount in amounts.items():
+                add_category_amount(tracker, category_id, amount)
             tracker.save()
     else:
         # Just recalculate all affected trackers
         trackers = receipt.spend_trackers.all()
         for tracker in trackers:
-            tracker.recalculate_from_receipts()
+            recalculate_from_receipts(tracker)
 
 def get_affected_trackers_for_receipt_at_date(customer: Customer, receipt_date):
     """

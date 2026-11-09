@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import BaseUserManager
 from django.utils.timezone import now
-from decimal import Decimal
 # Create your models here.
 
 class CustomerManager(BaseUserManager):
@@ -114,30 +113,6 @@ class SpendTracker(models.Model):
 
     class Meta:
         unique_together = [['customer', 'tracker_type', 'starting_date']]
-    
-    def recalculate_from_receipts(self):
-        """
-        Recalculate total_spend and category amounts from associated receipts.
-        Useful for data integrity checks or when receipts are updated.
-        """
-        
-        
-        receipts = self.receipts.all()
-        self.total_spend = Decimal('0')
-        category_totals = {}
-
-        for receipt in receipts:
-            self.total_spend += receipt.total_spend
-
-            if receipt.category_id is not None:
-                category_totals[receipt.category_id] = category_totals.get(receipt.category_id, Decimal("0")) + receipt.total_spend
-
-        self.save()
-        self.category_amounts.all().delete()
-        SpendTrackerCategory.objects.bulk_create([
-            SpendTrackerCategory(tracker=self, category_id=category_id, amount=amount)
-            for category_id, amount in category_totals.items()
-        ])
 
 
 class SpendTrackerCategory(models.Model):
