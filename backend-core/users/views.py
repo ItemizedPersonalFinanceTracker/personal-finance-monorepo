@@ -56,8 +56,14 @@ class AccountSummaryView(APIView):
         week_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.WEEK_TRACKER, now)
         month_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.MONTH_TRACKER, now)
         year_tracker, _ = get_or_create_spend_tracker(user, SpendTracker.YEAR_TRACKER, now)
-        
-        serializer = SpendTrackerSerializer([week_tracker, month_tracker, year_tracker], many=True)
+        tracker_ids = [week_tracker.pk, month_tracker.pk, year_tracker.pk]
+        trackers = {
+            tracker.pk: tracker
+            for tracker in SpendTracker.objects.filter(pk__in=tracker_ids).prefetch_related(
+                "category_amounts__category"
+            )
+        }
+        serializer = SpendTrackerSerializer([trackers[pk] for pk in tracker_ids], many=True)
         return Response({
             'week': serializer.data[0],
             'month': serializer.data[1],
@@ -83,7 +89,7 @@ class SpendingTrackerView(APIView):
             start_date = dj_timezone.make_aware(start_date, dj_timezone.get_current_timezone())
         trackers = SpendTracker.objects.filter(
             customer=user, tracker_type=tracker_type, starting_date__gte=start_date
-        ).order_by("starting_date")
+        ).prefetch_related("category_amounts__category").order_by("starting_date")
         serializer = SpendTrackerSerializer(trackers, many=True)
         return Response(serializer.data)
 

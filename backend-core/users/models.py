@@ -102,7 +102,11 @@ class SpendTracker(models.Model):
     tracker_type = models.CharField(max_length=20, choices=TRACKER_TYPE_CHOICES)
     last_updated = models.DateTimeField(auto_now=True)
 
-    classification_data = models.JSONField(default=dict)
+    # Deprecated. Category totals are stored on SpendTrackerCategory. This copy is left in place.
+    classification_data = models.JSONField(
+        default=dict,
+        help_text="Deprecated. Use SpendTrackerCategory rows instead.",
+    )
 
     # Many-to-Many relationship with Receipts
     # A receipt can belong to multiple trackers (week, month, year)
@@ -113,24 +117,41 @@ class SpendTracker(models.Model):
     
     def recalculate_from_receipts(self):
         """
-        Recalculate total_spend and classification_data from associated receipts.
+        Recalculate total_spend and category amounts from associated receipts.
         Useful for data integrity checks or when receipts are updated.
         """
         
         
         receipts = self.receipts.all()
         self.total_spend = Decimal('0')
-        self.classification_data = {}
-        
+        category_totals = {}
+
         for receipt in receipts:
             self.total_spend += receipt.total_spend
-            
-            if receipt.category is not None:
-                category_name = receipt.category.category_name
-                current_value = self.classification_data.get(category_name, 0)
-                self.classification_data[category_name] = current_value + float(receipt.total_spend)
-        
+
+            if receipt.category_id is not None:
+                category_totals[receipt.category_id] = category_totals.get(receipt.category_id, Decimal("0")) + receipt.total_spend
+
         self.save()
+        self.category_amounts.all().delete()
+        SpendTrackerCategory.objects.bulk_create([
+            SpendTrackerCategory(tracker=self, category_id=category_id, amount=amount)
+            for category_id, amount in category_totals.items()
+        ])
+
+
+class SpendTrackerCategory(models.Model):
+    tracker = models.ForeignKey(SpendTracker, on_delete=models.CASCADE, related_name="category_amounts")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="tracker_amounts")
+    amount = models.DecimalField(max_digits=19, decimal_places=2, default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tracker", "category"],
+                name="unique_tracker_category_amount",
+            )
+        ]
 
 
 class UserConfigChoices(models.TextChoices):

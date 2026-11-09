@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Max
 
 from financeproject.app_settings import APP_SETTINGS
-from users.models import Category, Customer, Receipt, SpendTracker
+from users.models import Category, Customer, Receipt, SpendTracker, SpendTrackerCategory
 from users.services.gemini_provider import GeminiProvider
 
 
@@ -83,7 +83,6 @@ def get_or_create_spend_tracker(customer: Customer, tracker_type: str, reference
         starting_date=starting_date,
         defaults={
             'total_spend': 0,
-            'classification_data': {}
         }
     )
     return tracker, created
@@ -129,7 +128,6 @@ def backfill_empty_spend_trackers(customer: Customer | None = None):
                     tracker_type=tracker_type,
                     starting_date=period_start,
                     total_spend=0,
-                    classification_data={},
                     last_updated=now,
                 )
             )
@@ -158,6 +156,20 @@ def get_affected_trackers_for_receipt(receipt: Receipt):
     
     return trackers
 
+def add_category_amount(tracker: SpendTracker, category_id: int, amount: Decimal):
+    """Add amount onto the single category row for this tracker."""
+    if not category_id or amount == 0:
+        return
+    row, created = SpendTrackerCategory.objects.get_or_create(
+        tracker=tracker,
+        category_id=category_id,
+        defaults={"amount": amount},
+    )
+    if created:
+        return
+    row.amount += amount
+    row.save(update_fields=["amount"])
+
 def update_summary(total: Decimal, receipt: Receipt):
     """
     Update SpendTracker instances for week, month, and year based on the receipt.
@@ -170,13 +182,7 @@ def update_summary(total: Decimal, receipt: Receipt):
         
         # Update total spend (convert to Decimal for proper arithmetic)
         tracker.total_spend = tracker.total_spend + total
-        
-        if receipt.category is not None:
-            category_name = receipt.category.category_name
-            classification_data = tracker.classification_data or {}
-            classification_data[category_name] = round(classification_data.get(category_name, 0) + float(total), 2)
-            tracker.classification_data = classification_data
-        
+        add_category_amount(tracker, receipt.category_id, total)
         tracker.save()
 
 def update_summary_bulk(receipts: list[Receipt]):
@@ -196,9 +202,6 @@ def update_summary_bulk(receipts: list[Receipt]):
         ):
             starting_date = get_starting_date_for_period(tracker_type, receipt.date_bought)
             grouped[(receipt.customer_id, tracker_type, starting_date)].append(receipt)
-
-    category_ids = {receipt.category_id for receipt in receipts if receipt.category_id}
-    categories_by_id = Category.objects.in_bulk(category_ids) if category_ids else {}
 
     customer_ids = {key[0] for key in grouped}
     tracker_types = {key[1] for key in grouped}
@@ -222,7 +225,6 @@ def update_summary_bulk(receipts: list[Receipt]):
                     tracker_type=tracker_type,
                     starting_date=starting_date,
                     total_spend=0,
-                    classification_data={},
                 )
             )
 
@@ -239,30 +241,26 @@ def update_summary_bulk(receipts: list[Receipt]):
 
         for key, group in grouped.items():
             tracker = existing[key]
-            classification_data = dict(tracker.classification_data or {})
             total_delta = Decimal("0")
+            category_deltas = defaultdict(Decimal)
 
             for receipt in group:
                 total_delta += receipt.total_spend
-                category = categories_by_id.get(receipt.category_id)
-                if category is not None:
-                    category_name = category.category_name
-                    classification_data[category_name] = round(
-                        classification_data.get(category_name, 0) + float(receipt.total_spend),
-                        2,
-                    )
+                if receipt.category_id is not None:
+                    category_deltas[receipt.category_id] += receipt.total_spend
                 through_rows.append(
                     ThroughModel(spendtracker_id=tracker.pk, receipt_id=receipt.pk)
                 )
 
             tracker.total_spend = tracker.total_spend + total_delta
-            tracker.classification_data = classification_data
             tracker.last_updated = now
             trackers_to_update.append(tracker)
+            for category_id, amount in category_deltas.items():
+                add_category_amount(tracker, category_id, amount)
 
         SpendTracker.objects.bulk_update(
             trackers_to_update,
-            ["total_spend", "classification_data", "last_updated"],
+            ["total_spend", "last_updated"],
         )
         ThroughModel.objects.bulk_create(through_rows, ignore_conflicts=True)
 
@@ -299,13 +297,7 @@ def update_receipt_in_trackers(receipt: Receipt, old_total=None, old_date=None):
         for tracker in new_trackers:
             tracker.receipts.add(receipt)
             tracker.total_spend = Decimal(str(tracker.total_spend)) + Decimal(str(receipt.total_spend))
-            
-            if receipt.category is not None:
-                category_name = receipt.category.category_name
-                classification_data = tracker.classification_data or {}
-                classification_data[category_name] = classification_data.get(category_name, 0) + float(receipt.total_spend)
-                tracker.classification_data = classification_data
-            
+            add_category_amount(tracker, receipt.category_id, receipt.total_spend)
             tracker.save()
     else:
         # Just recalculate all affected trackers
