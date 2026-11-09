@@ -112,6 +112,7 @@ class ReceiptView(APIView):
             image=data["image"],
             date_bought=data["dateBought"],
             category_name=data["category_name"],
+            items=data.get("items"),
         )
         return Response({"receipt_id": receipt.receipt_id}, status=status.HTTP_201_CREATED)
 
@@ -119,7 +120,7 @@ class ReceiptView(APIView):
 class ReceiptDetailView(APIView):
     def get(self, request, pk, format=None):
         try:
-            receipt = Receipt.objects.prefetch_related("items").get(
+            receipt = Receipt.objects.prefetch_related("items__category").get(
                 receipt_id=pk, customer=request.user
             )
         except Receipt.DoesNotExist:
@@ -144,6 +145,8 @@ class ReceiptDetailView(APIView):
             date_bought=data.get("dateBought"),
             category_name=data.get("category_name"),
             update_category="category_name" in request.data,
+            items=data.get("items"),
+            update_items="items" in data,
         )
         return Response({"receipt_id": receipt.receipt_id})
 

@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 
 from users.models import Category, Customer, Item, Receipt, SpendTracker, UserConfig
@@ -56,12 +58,55 @@ class UserConfigSerializer(serializers.ModelSerializer):
         fields = ["config", "value"]
 
 
+class ItemWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=200)
+    price = serializers.DecimalField(max_digits=19, decimal_places=2)
+    category_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Item name is required.")
+        return value
+
+    def validate_category_name(self, value):
+        if value is None:
+            return None
+        return value.strip().lower() or None
+
+
 class ReceiptSerializer(serializers.Serializer):
     total = serializers.DecimalField(max_digits=19, decimal_places=2)
     storeName = serializers.CharField()
     dateBought = serializers.DateTimeField(required=False, allow_null=True, default=None)
     category_name = serializers.CharField(required=False, allow_null=True, default=None)
     image = serializers.ImageField(required=False, allow_null=True, default=None)
+    items = ItemWriteSerializer(many=True, required=False)
+
+    def to_internal_value(self, data):
+        raw_items = data.get("items") if hasattr(data, "get") else None
+        if isinstance(raw_items, str):
+            parsed = self._parse_items(raw_items)
+            if hasattr(data, "lists"):
+                data = {key: data.get(key) for key in data}
+            else:
+                data = data.copy()
+            data["items"] = parsed
+        return super().to_internal_value(data)
+
+    @staticmethod
+    def _parse_items(raw):
+        if not raw.strip():
+            return []
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise serializers.ValidationError({"items": "Items must be a JSON list."}) from exc
+        if parsed is None:
+            return []
+        if not isinstance(parsed, list):
+            raise serializers.ValidationError({"items": "Items must be a list."})
+        return parsed
 
 
 class ImageReceiptSerializer(serializers.Serializer):
@@ -86,9 +131,14 @@ class ReceiptListSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Item
-        fields = ["name", "price"]
+        fields = ["id", "name", "price", "category_name"]
+
+    def get_category_name(self, obj):
+        return obj.category.category_name if obj.category else None
 
 
 class ReceiptDetailSerializer(serializers.ModelSerializer):

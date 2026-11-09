@@ -21,6 +21,8 @@ import { useGetUserConfigsQuery, useUpdateUserConfigMutation } from "../../store
 import { UserConfigKey, type UserConfig } from "../../store/api/classes/config";
 import { useCreateManualReceiptMutation, useScanReceiptMutation } from "../../store/api/receiptApi";
 import type { ScanReceiptResponse } from "../../store/api/classes/receipt";
+import AddBillItems from "./AddBillItems";
+import { billItemHasContent, createBillItem, type BillItemDraft } from "./billItem";
 import AddCategoryButton from "./AddCategoryButton";
 import ReceiptCameraModal from "./ReceiptCameraModal";
 import { apiErrorMessage, categoryLabel, OTHER_CATEGORY, toDateBought, todayDateValue } from "../../utility_functions/util";
@@ -55,6 +57,8 @@ export default function AddBill() {
     const [category, setCategory] = useState<string | null>(OTHER_CATEGORY);
     const [amount, setAmount] = useState<number | string>("");
     const [date, setDate] = useState(todayDateValue);
+    const [items, setItems] = useState<BillItemDraft[]>([]);
+    const [itemsOpen, setItemsOpen] = useState(false);
     const [image, setImage] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -90,6 +94,17 @@ export default function AddBill() {
                 const normalized = result.category.trim().toLowerCase();
                 const matched = categoriesRef.current.find((c) => c.category_name === normalized);
                 setCategory(matched ? matched.category_name : OTHER_CATEGORY);
+                const nextItems = result.items.map((item) => {
+                    const itemCategory = item.category.trim().toLowerCase();
+                    const matchedItem = categoriesRef.current.find((c) => c.category_name === itemCategory);
+                    return createBillItem({
+                        name: item.name,
+                        price: item.price,
+                        category: matchedItem ? matchedItem.category_name : OTHER_CATEGORY,
+                    });
+                });
+                setItems(nextItems);
+                setItemsOpen(nextItems.some(billItemHasContent));
             })
             .catch((err: unknown) => {
                 if (generation !== scanGeneration.current) {
@@ -178,6 +193,8 @@ export default function AddBill() {
         setCategory(OTHER_CATEGORY);
         setAmount("");
         setDate(todayDateValue());
+        setItems([]);
+        setItemsOpen(false);
         assignImage(null);
         setErrorMessage(null);
     }, [assignImage]);
@@ -363,6 +380,15 @@ export default function AddBill() {
                                 ) : null}
                             </Stack>
                         </Group>
+                        <AddBillItems
+                            items={items}
+                            onChange={setItems}
+                            opened={itemsOpen}
+                            onOpenedChange={setItemsOpen}
+                            categories={categories}
+                            categoriesLoading={categoriesLoading}
+                            disabled={formLocked}
+                        />
                         <Button
                             type="button"
                             onClick={handleSubmit}
