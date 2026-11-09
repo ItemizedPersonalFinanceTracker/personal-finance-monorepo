@@ -13,6 +13,7 @@ The app is a monorepo: a React frontend (`frontend-web`) and a Django API (`back
 | test@test.com | 1234 |
 
 Sign in with that account to browse sample spending, or register a new account from the login page.
+For security reasons, I have not included any of my actual receipts, so there are no receipts with images to look at. Feel free to add your own receipts to the test account. 
 
 ## Flow
 
